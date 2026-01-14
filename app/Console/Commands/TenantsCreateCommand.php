@@ -26,11 +26,13 @@ class TenantsCreateCommand extends Command
 
         if (! preg_match('/^[a-zA-Z0-9][a-zA-Z0-9\\-_]{2,60}$/', $slug)) {
             $this->error('Slug inválido. Use letras/números e hífen/underscore (mín. 3 chars).');
+
             return self::FAILURE;
         }
 
         if (! preg_match('/^[a-zA-Z_][a-zA-Z0-9_]*$/', $schema)) {
             $this->error('Schema inválido. Use apenas letras/números/underscore e não comece com número.');
+
             return self::FAILURE;
         }
 
@@ -70,4 +72,3 @@ class TenantsCreateCommand extends Command
         ], $this->getOutput());
     }
 }
-

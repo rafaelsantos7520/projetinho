@@ -47,18 +47,18 @@ class TenantResolver
     private function resolveSlugFromSubdomain(string $host): ?string
     {
         $baseDomain = trim((string) config('tenancy.base_domain', ''));
-        if ($baseDomain === '' || ! Str::endsWith($host, '.' . $baseDomain)) {
+        if ($baseDomain === '' || ! Str::endsWith($host, '.'.$baseDomain)) {
             return null;
         }
 
-        $subdomain = Str::before($host, '.' . $baseDomain);
+        $subdomain = Str::before($host, '.'.$baseDomain);
         if ($subdomain === '') {
             return null;
         }
 
         $adminPrefix = trim((string) config('tenancy.admin_subdomain_prefix', ''));
-        if ($adminPrefix !== '' && Str::startsWith($subdomain, $adminPrefix . '.')) {
-            $subdomain = Str::after($subdomain, $adminPrefix . '.');
+        if ($adminPrefix !== '' && Str::startsWith($subdomain, $adminPrefix.'.')) {
+            $subdomain = Str::after($subdomain, $adminPrefix.'.');
         }
 
         if ($subdomain === '' || Str::contains($subdomain, '.')) {

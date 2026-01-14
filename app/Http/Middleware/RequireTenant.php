@@ -28,6 +28,7 @@ class RequireTenant
             if ($sessionTenant !== $tenant->slug) {
                 Auth::guard('web')->logout();
                 session()->invalidate();
+
                 return redirect()->route('tenant_admin.login', ['tenant' => $tenant->slug]);
             }
         }
@@ -35,4 +36,3 @@ class RequireTenant
         return $next($request);
     }
 }
-

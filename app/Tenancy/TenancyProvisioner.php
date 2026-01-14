@@ -18,8 +18,7 @@ class TenancyProvisioner
         ?string $ownerEmail = null,
         ?string $ownerPassword = null,
         ?string $ownerName = null,
-    ): Tenant
-    {
+    ): Tenant {
         $schema = $schema ?: 'tenant_'.Str::of($slug)->lower()->replace('-', '_');
 
         if (! preg_match('/^[a-zA-Z0-9][a-zA-Z0-9\\-_]{2,60}$/', $slug)) {

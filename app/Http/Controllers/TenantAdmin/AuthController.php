@@ -46,6 +46,7 @@ class AuthController extends Controller
         $request->session()->regenerateToken();
 
         $tenant = app()->bound(Tenant::class) ? app(Tenant::class) : null;
+
         return redirect()->route('tenant_admin.login', $tenant ? ['tenant' => $tenant->slug] : []);
     }
 }

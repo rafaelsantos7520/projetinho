@@ -8,8 +8,8 @@ use App\Tenancy\TenantSchemaManager;
 use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Str;
 use Illuminate\Support\Facades\URL;
+use Illuminate\Support\Str;
 use Symfony\Component\HttpFoundation\Response;
 
 class InitializeTenancy
@@ -46,8 +46,8 @@ class InitializeTenancy
     private function isolateTenantSession(string $tenantSlug): void
     {
         $baseCookie = (string) config('session.cookie');
-        $suffix = 't_' . Str::of($tenantSlug)->lower()->replace([' ', '.'], '_');
-        $cookie = rtrim($baseCookie, '_') . '_' . (string) $suffix;
+        $suffix = 't_'.Str::of($tenantSlug)->lower()->replace([' ', '.'], '_');
+        $cookie = rtrim($baseCookie, '_').'_'.(string) $suffix;
 
         config(['session.cookie' => $cookie]);
     }

@@ -24,4 +24,3 @@ class Tenant extends Model
         'domain',
     ];
 }
-

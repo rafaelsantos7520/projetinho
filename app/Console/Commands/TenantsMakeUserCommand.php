@@ -2,8 +2,8 @@
 
 namespace App\Console\Commands;
 
-use App\Models\User;
 use App\Models\Tenant;
+use App\Models\User;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
@@ -28,6 +28,7 @@ class TenantsMakeUserCommand extends Command
         $tenant = Tenant::query()->where('slug', $slug)->first();
         if ($tenant === null) {
             $this->error('Tenant não encontrado.');
+
             return self::FAILURE;
         }
 
@@ -37,6 +38,7 @@ class TenantsMakeUserCommand extends Command
 
         if (! is_string($password) || $password === '') {
             $this->error('Senha inválida.');
+
             return self::FAILURE;
         }
 
@@ -54,4 +56,3 @@ class TenantsMakeUserCommand extends Command
         return self::SUCCESS;
     }
 }
-

@@ -24,6 +24,7 @@ class AuthController extends Controller
 
         if (Auth::guard('platform')->attempt($credentials, remember: true)) {
             $request->session()->regenerate();
+
             return redirect()->route('platform.tenants.index');
         }
 
@@ -41,4 +42,3 @@ class AuthController extends Controller
         return redirect()->route('platform.login');
     }
 }
-

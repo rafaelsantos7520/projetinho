@@ -27,6 +27,7 @@ class PlatformMakeAdminCommand extends Command
 
         if (! is_string($password) || $password === '') {
             $this->error('Senha inválida.');
+
             return self::FAILURE;
         }
 
@@ -40,4 +41,3 @@ class PlatformMakeAdminCommand extends Command
         return self::SUCCESS;
     }
 }
-

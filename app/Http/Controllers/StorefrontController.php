@@ -85,14 +85,14 @@ class StorefrontController extends Controller
     public function show(Product $product): View
     {
         $product->load('category');
-        
+
         $related = Product::query()
             ->with('category')
             ->where('category_id', $product->category_id)
             ->where('id', '!=', $product->id)
             ->limit(4)
             ->get();
-            
+
         $categories = Category::query()
             ->whereHas('products')
             ->orderBy('name')

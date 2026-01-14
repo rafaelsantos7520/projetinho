@@ -28,6 +28,7 @@ class TenantsMigrateCommand extends Command
 
         if ($tenants->isEmpty()) {
             $this->warn('Nenhum tenant encontrado.');
+
             return self::SUCCESS;
         }
 
@@ -52,4 +53,3 @@ class TenantsMigrateCommand extends Command
         ], $this->getOutput());
     }
 }
-

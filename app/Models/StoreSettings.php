@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 class StoreSettings extends Model
 {
     protected $table = 'store_settings';
-    
+
     protected $fillable = [
         'logo_url',
         'primary_color',
@@ -15,11 +15,11 @@ class StoreSettings extends Model
         'instagram_url',
         'facebook_url',
     ];
-    
+
     public static function current(): self
     {
         return static::firstOrCreate([], [
-            'primary_color' => '#0f172a'
+            'primary_color' => '#0f172a',
         ]);
     }
 }

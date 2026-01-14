@@ -19,7 +19,7 @@ return new class extends Migration
         $products = DB::table('products')->whereNotNull('category')->where('category', '!=', '')->get();
         foreach ($products as $product) {
             $catId = DB::table('categories')->where('name', $product->category)->value('id');
-            if (!$catId) {
+            if (! $catId) {
                 $catId = DB::table('categories')->insertGetId([
                     'name' => $product->category,
                     'slug' => \Illuminate\Support\Str::slug($product->category),

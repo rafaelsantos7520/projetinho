@@ -37,4 +37,3 @@ class OnboardingController extends Controller
             ->with('status', 'Loja criada. Agora entre com seu email e senha.');
     }
 }
-

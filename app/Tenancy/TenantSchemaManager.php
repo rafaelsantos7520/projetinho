@@ -22,4 +22,3 @@ class TenantSchemaManager
         DB::connection()->statement('SET search_path TO public');
     }
 }
-

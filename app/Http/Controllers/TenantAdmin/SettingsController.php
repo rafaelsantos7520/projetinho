@@ -14,7 +14,7 @@ class SettingsController extends Controller
     public function edit(): View
     {
         $settings = StoreSettings::current();
-        
+
         $palettes = [
             ['name' => 'Preto (Padrão)', 'color' => '#0f172a'],
             ['name' => 'Azul', 'color' => '#2563eb'],
@@ -41,6 +41,7 @@ class SettingsController extends Controller
         $settings->update($validated);
 
         $tenant = app(Tenant::class);
+
         return redirect()
             ->route('tenant_admin.settings.edit', ['tenant' => $tenant->slug])
             ->with('status', 'Configurações atualizadas com sucesso!');

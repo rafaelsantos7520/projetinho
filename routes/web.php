@@ -1,18 +1,18 @@
 <?php
 
-use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\Platform\TenantController as PlatformTenantController;
-use App\Http\Controllers\Platform\AuthController as PlatformAuthController;
 use App\Http\Controllers\OnboardingController;
+use App\Http\Controllers\Platform\AuthController as PlatformAuthController;
+use App\Http\Controllers\Platform\TenantController as PlatformTenantController;
 use App\Http\Controllers\StorefrontController;
 use App\Http\Controllers\TenantAdmin\AuthController as TenantAdminAuthController;
-use App\Http\Controllers\TenantAdmin\ProductController as TenantAdminProductController;
 use App\Http\Controllers\TenantAdmin\CategoryController as TenantAdminCategoryController;
+use App\Http\Controllers\TenantAdmin\ProductController as TenantAdminProductController;
 use App\Http\Controllers\TenantAdmin\SettingsController as TenantAdminSettingsController;
 use App\Http\Middleware\ForceLandlordSchema;
 use App\Http\Middleware\RequireTenant;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Route;
 
 Route::get('/login', function (Request $request) {
     $intended = session()->get('url.intended');
@@ -29,7 +29,7 @@ Route::get('/login', function (Request $request) {
         parse_str($parts['query'] ?? '', $query);
 
         // Se encontrou tenant na url intended, usa ele prioritariamente
-        if (isset($query['tenant']) && !empty($query['tenant'])) {
+        if (isset($query['tenant']) && ! empty($query['tenant'])) {
             $tenantParam['tenant'] = $query['tenant'];
         }
 
@@ -38,7 +38,7 @@ Route::get('/login', function (Request $request) {
         }
 
         // Se for admin e tivermos o tenant, redireciona direto
-        if (str_starts_with($path, '/admin') && !empty($tenantParam)) {
+        if (str_starts_with($path, '/admin') && ! empty($tenantParam)) {
             return redirect()->route('tenant_admin.login', $tenantParam);
         }
     }
@@ -56,6 +56,7 @@ Route::get('/', function (Request $request) {
     if ($tenant !== '') {
         $query = $request->query();
         unset($query['tenant']);
+
         return redirect()->route('storefront.index', ['tenant' => $tenant] + $query);
     }
 

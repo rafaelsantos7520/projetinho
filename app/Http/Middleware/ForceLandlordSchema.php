@@ -12,8 +12,7 @@ class ForceLandlordSchema
 {
     public function __construct(
         private readonly TenantSchemaManager $schemaManager,
-    ) {
-    }
+    ) {}
 
     /**
      * @param  Closure(Request): Response  $next
@@ -26,4 +25,3 @@ class ForceLandlordSchema
         return $next($request);
     }
 }
-
