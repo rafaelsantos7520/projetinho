@@ -40,8 +40,8 @@ jobs:
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_KEY }}
           port: ${{ secrets.SSH_PORT }}
-          source: "public/build/*"
-          target: "/home/user/htdocs/srv1271384.hstgr.cloud/projetinho/public/build"
+          source: "public/build"
+          target: "/home/user/htdocs/srv1271384.hstgr.cloud/projetinho"
 
       - name: Deploy via SSH
         uses: appleboy/ssh-action@v1.2.0
