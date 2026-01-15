@@ -5,21 +5,25 @@ namespace App\Http\Controllers;
 use App\Models\Category;
 use App\Models\Product;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
 
 class StorefrontController extends Controller
 {
     public function index(Request $request): View
     {
-        $query = Product::query()->with('category');
+        $driver = DB::connection()->getDriverName();
+        $likeOperator = $driver === 'pgsql' ? 'ilike' : 'like';
+
+        $query = Product::query()->with(['category', 'images']);
 
         $search = trim((string) $request->query('q', ''));
         if ($search !== '') {
-            $query->where(function ($q) use ($search) {
-                $q->where('name', 'ilike', '%'.$search.'%')
-                    ->orWhere('description', 'ilike', '%'.$search.'%')
-                    ->orWhereHas('category', function ($q) use ($search) {
-                        $q->where('name', 'ilike', '%'.$search.'%');
+            $query->where(function ($q) use ($search, $likeOperator) {
+                $q->where('name', $likeOperator, '%'.$search.'%')
+                    ->orWhere('description', $likeOperator, '%'.$search.'%')
+                    ->orWhereHas('category', function ($q) use ($search, $likeOperator) {
+                        $q->where('name', $likeOperator, '%'.$search.'%');
                     });
             });
         }
@@ -50,23 +54,26 @@ class StorefrontController extends Controller
         $products = $query->limit(60)->get();
 
         $featured = Product::query()
-            ->with('category')
+            ->with(['category', 'images'])
             ->where('is_featured', true)
             ->orderBy('id', 'desc')
             ->limit(8)
             ->get();
 
         $promos = Product::query()
-            ->with('category')
+            ->with(['category', 'images'])
             ->whereNotNull('promo_price_cents')
-            ->orderByRaw('(price_cents - promo_price_cents) desc nulls last')
+            ->orderByRaw($driver === 'pgsql'
+                ? '(price_cents - promo_price_cents) desc nulls last'
+                : '(price_cents - promo_price_cents) desc'
+            )
             ->limit(6)
             ->get();
 
         $categories = Category::query()
             ->whereHas('products')
             ->orderBy('name')
-            ->pluck('name');
+            ->get();
 
         return view('storefront.index', [
             'products' => $products,
@@ -84,10 +91,10 @@ class StorefrontController extends Controller
 
     public function show(Product $product): View
     {
-        $product->load('category');
+        $product->load(['category', 'images']);
 
         $related = Product::query()
-            ->with('category')
+            ->with(['category', 'images'])
             ->where('category_id', $product->category_id)
             ->where('id', '!=', $product->id)
             ->limit(4)
@@ -96,7 +103,7 @@ class StorefrontController extends Controller
         $categories = Category::query()
             ->whereHas('products')
             ->orderBy('name')
-            ->pluck('name');
+            ->get();
 
         return view('storefront.show', [
             'product' => $product,

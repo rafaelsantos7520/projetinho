@@ -8,6 +8,7 @@ use App\Tenancy\TenantSchemaManager;
 use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Str;
 use Symfony\Component\HttpFoundation\Response;
@@ -34,8 +35,13 @@ class InitializeTenancy
             config(['auth.defaults.guard' => 'web']);
             Auth::shouldUse('web');
         } else {
-            $fallbackSchema = (string) config('tenancy.fallback_schema', 'public');
-            $this->schemaManager->setSearchPath($fallbackSchema);
+            $connectionName = (string) config('tenancy.tenant_connection', config('database.default'));
+            $driver = DB::connection($connectionName)->getDriverName();
+            $fallback = $driver === 'pgsql'
+                ? (string) config('tenancy.fallback_schema', 'public')
+                : (string) config('tenancy.fallback_database');
+
+            $this->schemaManager->setSearchPath($fallback);
             config(['auth.defaults.guard' => 'platform']);
             Auth::shouldUse('platform');
         }

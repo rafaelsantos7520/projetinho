@@ -27,118 +27,38 @@
     @php($shouldShowHeader = (bool) $showHeader && !$isAuthLikePage)
     @php($isPlatformArea = request()->is('platform*'))
     @php($hasTenant = $tenantSlug !== null)
+    @php($isTenantAdminArea = request()->is('admin*') && $hasTenant && !request()->routeIs('tenant_admin.login*'))
 
-    <div class="{{ $fullWidth ? 'w-full' : 'max-w-5xl mx-auto px-4 py-6 sm:py-10' }}">
-        @if ($shouldShowHeader)
-            <header
-                class="{{ $fullWidth ? 'max-w-7xl mx-auto px-4 py-6' : 'flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8' }}">
-                @if ($fullWidth)
-                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                @endif
+    @if ($isTenantAdminArea)
+        <div class="min-h-screen bg-slate-50">
+            <x-tenant-admin.header :tenant-query="$tenantQuery" :tenant-slug="$tenantSlug" :store-settings="$storeSettings ?? null" />
+            
+            <main class="mx-auto max-w-7xl px-4 pt-28 sm:pt-32 pb-10 sm:px-6 lg:px-8">
+                <x-ui.alerts />
+                {{ $slot }}
+            </main>
+        </div>
+    @else
+        <div class="{{ $fullWidth ? 'w-full' : 'max-w-5xl mx-auto px-4 py-6 sm:py-10' }}">
+            <x-storefront.header 
+                :full-width="$fullWidth"
+                :should-show-header="$shouldShowHeader"
+                :store-settings="$storeSettings ?? null"
+                :tenant-slug="$tenantSlug"
+                :has-tenant="$hasTenant"
+                :subtitle="$subtitle"
+                :tenant-query="$tenantQuery"
+                :is-platform-area="$isPlatformArea"
+            />
 
-                <div class="flex items-center gap-3">
-                    @if (isset($storeSettings) && $storeSettings->logo_url)
-                        <img src="{{ $storeSettings->logo_url }}" alt="Logo" class="h-12 w-auto object-contain">
-                    @else
-                        <div class="h-10 w-10 rounded-xl text-white flex items-center justify-center font-bold text-lg"
-                            style="background-color: var(--primary-color)">
-                            {{ substr($tenantSlug ? ucfirst($tenantSlug) : config('app.name'), 0, 2) }}
-                        </div>
-                    @endif
-                    @if (!$hasTenant || (!isset($storeSettings->logo_url) || !$storeSettings->logo_url))
-                        <div>
-                            <div class="font-bold leading-tight">
-                                {{ $tenantSlug ? ucfirst($tenantSlug) : config('app.name') }}</div>
-                            <div class="text-sm text-slate-500">{{ $subtitle ?? 'Loja Virtual' }}</div>
-                        </div>
-                    @endif
-                </div>
-
-                <nav class="flex flex-wrap items-center gap-2">
-                    @if (!request()->is('platform*') && $hasTenant)
-                        <a href="{{ route('storefront.index', $tenantQuery) }}"
-                            class="text-sm px-4 py-2 rounded-2xl bg-white border border-slate-200 hover:bg-slate-50">
-                            Loja
-                        </a>
-                    @endif
-
-                    @if ($hasTenant)
-                        @if (\Illuminate\Support\Facades\Auth::check())
-                            <a href="{{ route('tenant_admin.products.index', $tenantQuery) }}"
-                                class="text-sm px-4 py-2 rounded-2xl bg-white border border-slate-200 hover:bg-slate-50">
-                                Admin da Loja
-                            </a>
-                            <form method="POST" action="{{ route('tenant_admin.logout', $tenantQuery) }}">
-                                @csrf
-                                <input type="hidden" name="tenant" value="{{ $tenantSlug }}" />
-                                <button
-                                    class="text-sm px-4 py-2 rounded-2xl bg-white border border-slate-200 hover:bg-slate-50">
-                                    Sair (Loja)
-                                </button>
-                            </form>
-                        @else
-                            <a href="{{ route('tenant_admin.login', $tenantQuery) }}"
-                                class="text-sm px-4 py-2 rounded-2xl bg-white border border-slate-200 hover:bg-slate-50">
-                                Entrar na Loja
-                            </a>
-                        @endif
-                    @endif
-
-                    @if ($isPlatformArea)
-                        @if (\Illuminate\Support\Facades\Auth::guard('platform')->check())
-                            <a href="{{ route('platform.tenants.index') }}"
-                                class="text-sm px-4 py-2 rounded-2xl bg-white border border-slate-200 hover:bg-slate-50">
-                                Plataforma
-                            </a>
-                            <form method="POST" action="{{ route('platform.logout') }}">
-                                @csrf
-                                <button
-                                    class="text-sm px-4 py-2 rounded-2xl bg-white border border-slate-200 hover:bg-slate-50">
-                                    Sair (Plat.)
-                                </button>
-                            </form>
-                        @else
-                            <a href="{{ route('platform.login') }}"
-                                class="text-sm px-4 py-2 rounded-2xl bg-white border border-slate-200 hover:bg-slate-50">
-                                Entrar (Plat.)
-                            </a>
-                            @if ($isPlatformArea || !$hasTenant)
-                                <a href="{{ route('onboarding.create') }}"
-                                    class="text-sm px-4 py-2 rounded-2xl bg-slate-900 text-white hover:bg-slate-800">
-                                    Criar loja
-                                </a>
-                            @endif
-                        @endif
-                    @endif
-                </nav>
-                @if ($fullWidth)
-    </div>
-    @endif
-    </header>
-    @endif
-
-    @if ($errors->any())
-        <div class="mb-6 rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-800">
-            <div class="font-semibold mb-2">Corrija os erros abaixo</div>
-            <ul class="list-disc pl-5 space-y-1">
-                @foreach ($errors->all() as $error)
-                    <li>{{ $error }}</li>
-                @endforeach
-            </ul>
+            <x-ui.alerts />
+            {{ $slot }}
         </div>
     @endif
-
-    @if (session('status'))
-        <div class="mb-6 rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-800">
-            {{ session('status') }}
-        </div>
-    @endif
-
-    {{ $slot }}
-    </div>
 
     <script>
         (function() {
+            // Modal Logic
             function openModal(id) {
                 const el = document.getElementById(id);
                 if (!el) return;
@@ -156,7 +76,22 @@
                 el.setAttribute('aria-hidden', 'true');
             }
 
+            // Drawer Logic
+            function toggleDrawer(open) {
+                const drawer = document.querySelector('[data-admin-drawer]');
+                if (!drawer) return;
+                
+                if (open) {
+                    drawer.classList.remove('hidden');
+                    document.body.style.overflow = 'hidden';
+                } else {
+                    drawer.classList.add('hidden');
+                    document.body.style.overflow = '';
+                }
+            }
+
             document.addEventListener('click', (e) => {
+                // Modal triggers
                 const openBtn = e.target.closest('[data-open-modal]');
                 if (openBtn) {
                     e.preventDefault();
@@ -168,17 +103,25 @@
                 if (closeBtn) {
                     e.preventDefault();
                     closeModal(closeBtn.getAttribute('data-close-modal'));
+                    return;
                 }
-            });
+                
+                // Drawer triggers
+                const openDrawerBtn = e.target.closest('[data-admin-drawer-open]');
+                if (openDrawerBtn) {
+                    e.preventDefault();
+                    toggleDrawer(true);
+                    return;
+                }
 
-            document.addEventListener('keydown', (e) => {
-                if (e.key !== 'Escape') return;
-                const opened = document.querySelectorAll('[id].fixed.inset-0.z-50:not(.hidden)');
-                const last = opened[opened.length - 1];
-                if (last && last.id) closeModal(last.id);
+                const closeDrawerBtn = e.target.closest('[data-admin-drawer-close]');
+                if (closeDrawerBtn) {
+                    e.preventDefault();
+                    toggleDrawer(false);
+                    return;
+                }
             });
         })();
     </script>
 </body>
-
 </html>

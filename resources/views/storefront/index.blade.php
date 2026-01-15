@@ -79,9 +79,9 @@
         <div class="border-t border-slate-100 py-3 md:hidden overflow-x-auto">
             <div class="flex px-4 gap-3">
                 @foreach ($categories as $cat)
-                    <a href="{{ route('storefront.index', ['tenant' => $tenantSlug, 'category' => $cat]) }}"
+                    <a href="{{ route('storefront.index', ['tenant' => $tenantSlug, 'category' => $cat->name]) }}"
                         class="whitespace-nowrap px-4 py-1.5 bg-slate-100 rounded-full text-xs font-medium text-slate-700">
-                        {{ $cat }}
+                        {{ $cat->name }}
                     </a>
                 @endforeach
             </div>
@@ -122,15 +122,15 @@
             <h2 class="text-2xl font-bold text-slate-900 mb-8">Navegue por Categorias</h2>
             <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-6">
                 @foreach ($categories->take(6) as $cat)
-                    <a href="{{ route('storefront.index', ['tenant' => $tenantSlug, 'category' => $cat]) }}"
+                    <a href="{{ route('storefront.index', ['tenant' => $tenantSlug, 'category' => $cat->name]) }}"
                         class="group flex flex-col items-center gap-3 text-center">
                         <div class="h-32 w-32 rounded-full bg-slate-100 overflow-hidden relative group-hover:ring-4 transition-all"
                             style="--tw-ring-color: var(--primary-color)">
-                            <img src="https://picsum.photos/seed/{{ $cat }}/200/200"
+                            <img src="{{ $cat->image_url ?? ('https://picsum.photos/seed/'.urlencode($cat->slug).'/200/200') }}"
                                 class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500">
                         </div>
                         <span
-                            class="font-medium text-slate-700 group-hover:font-bold transition-all">{{ $cat }}</span>
+                            class="font-medium text-slate-700 group-hover:font-bold transition-all">{{ $cat->name }}</span>
                     </a>
                 @endforeach
             </div>

@@ -21,6 +21,7 @@
             <table class="min-w-full text-left text-sm">
                 <thead class="bg-slate-50 font-medium text-slate-600 border-b border-slate-200">
                     <tr>
+                        <th class="px-6 py-4">Imagem</th>
                         <th class="px-6 py-4">Nome</th>
                         <th class="px-6 py-4">Slug</th>
                         <th class="px-6 py-4 text-right">Ações</th>
@@ -29,6 +30,13 @@
                 <tbody class="divide-y divide-slate-200">
                     @forelse ($categories as $category)
                         <tr class="hover:bg-slate-50">
+                            <td class="px-6 py-4">
+                                <div class="h-10 w-10 rounded-xl bg-slate-100 overflow-hidden border border-slate-200">
+                                    @if ($category->image_url)
+                                        <img src="{{ $category->image_url }}" class="h-full w-full object-cover" />
+                                    @endif
+                                </div>
+                            </td>
                             <td class="px-6 py-4 font-medium text-slate-900">{{ $category->name }}</td>
                             <td class="px-6 py-4 text-slate-500">{{ $category->slug }}</td>
                             <td class="px-6 py-4 text-right">
@@ -44,7 +52,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="3" class="px-6 py-12 text-center text-slate-500">
+                            <td colspan="4" class="px-6 py-12 text-center text-slate-500">
                                 Nenhuma categoria cadastrada.
                             </td>
                         </tr>

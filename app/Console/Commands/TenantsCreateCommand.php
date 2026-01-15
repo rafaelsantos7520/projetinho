@@ -2,23 +2,21 @@
 
 namespace App\Console\Commands;
 
-use App\Models\Tenant;
+use App\Tenancy\TenancyProvisioner;
 use Illuminate\Console\Command;
-use Illuminate\Support\Facades\Artisan;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
 class TenantsCreateCommand extends Command
 {
     protected $signature = 'tenants:create
         {slug : Identificador da loja (ex.: loja-abc)}
-        {--schema= : Nome do schema (default: tenant_<slug>)}
+        {--schema= : Nome do schema/banco (default: tenant_<slug>)}
         {--domain= : Domínio completo (ex.: loja.exemplo.com)}
         {--no-migrate : Não rodar migrations do tenant}';
 
-    protected $description = 'Cria um tenant (loja) e provisiona um schema no Postgres.';
+    protected $description = 'Cria um tenant (loja) e provisiona um schema/banco para o tenant.';
 
-    public function handle(): int
+    public function handle(TenancyProvisioner $provisioner): int
     {
         $slug = (string) $this->argument('slug');
         $schema = (string) ($this->option('schema') ?: 'tenant_'.Str::of($slug)->lower()->replace('-', '_'));
@@ -36,39 +34,15 @@ class TenantsCreateCommand extends Command
             return self::FAILURE;
         }
 
-        $this->createSchema($schema);
-
-        $tenant = Tenant::query()->create([
-            'id' => (string) Str::uuid(),
-            'slug' => $slug,
-            'schema' => $schema,
-            'domain' => $domain,
-        ]);
-
-        if (! $this->option('no-migrate')) {
-            $this->runTenantMigrations($schema);
-        }
+        $tenant = $provisioner->createTenant(
+            slug: $slug,
+            domain: $domain,
+            schema: $schema,
+            runMigrations: ! (bool) $this->option('no-migrate'),
+        );
 
         $this->info(sprintf('Tenant criado: %s (%s)', $tenant->slug, $tenant->schema));
 
         return self::SUCCESS;
-    }
-
-    private function createSchema(string $schema): void
-    {
-        DB::connection('landlord')->statement(sprintf('CREATE SCHEMA IF NOT EXISTS "%s"', $schema));
-    }
-
-    private function runTenantMigrations(string $schema): void
-    {
-        DB::purge('pgsql');
-        DB::reconnect('pgsql');
-        DB::connection('pgsql')->statement(sprintf('SET search_path TO "%s", public', $schema));
-
-        Artisan::call('migrate', [
-            '--database' => 'pgsql',
-            '--path' => 'database/migrations/tenant',
-            '--force' => true,
-        ], $this->getOutput());
     }
 }

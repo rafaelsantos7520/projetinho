@@ -3,9 +3,9 @@
 namespace App\Console\Commands;
 
 use App\Models\Tenant;
+use App\Tenancy\TenantSchemaManager;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Artisan;
-use Illuminate\Support\Facades\DB;
 
 class TenantsMigrateCommand extends Command
 {
@@ -15,7 +15,7 @@ class TenantsMigrateCommand extends Command
 
     protected $description = 'Roda as migrations do tenant para um ou todos os tenants.';
 
-    public function handle(): int
+    public function handle(TenantSchemaManager $schemaManager): int
     {
         $slug = $this->option('tenant') !== null ? (string) $this->option('tenant') : null;
 
@@ -34,20 +34,18 @@ class TenantsMigrateCommand extends Command
 
         foreach ($tenants as $tenant) {
             $this->line(sprintf('Migrando tenant: %s (%s)', $tenant->slug, $tenant->schema));
-            $this->runTenantMigrations($tenant->schema);
+            $this->runTenantMigrations($schemaManager, $tenant->schema);
         }
 
         return self::SUCCESS;
     }
 
-    private function runTenantMigrations(string $schema): void
+    private function runTenantMigrations(TenantSchemaManager $schemaManager, string $schema): void
     {
-        DB::purge('pgsql');
-        DB::reconnect('pgsql');
-        DB::connection('pgsql')->statement(sprintf('SET search_path TO "%s", public', $schema));
-
+        $schemaManager->setSearchPath($schema, true);
+        $tenantConnection = (string) config('tenancy.tenant_connection', config('database.default'));
         Artisan::call('migrate', [
-            '--database' => 'pgsql',
+            '--database' => $tenantConnection,
             '--path' => 'database/migrations/tenant',
             '--force' => (bool) $this->option('force'),
         ], $this->getOutput());

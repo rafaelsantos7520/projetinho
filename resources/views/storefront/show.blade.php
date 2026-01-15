@@ -3,6 +3,7 @@
     @php($final = $product->promo_price_cents ?? $product->price_cents)
     @php($from = $product->compare_at_price_cents ?? $product->price_cents)
     @php($discount = $from > 0 ? max(0, (int) round((1 - $final / $from) * 100)) : 0)
+    @php($gallery = $product->images->take(4))
 
     {{-- Header Simplificado (Reuso da Home recomendado, mas aqui simplificado para foco) --}}
     <header class="sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-slate-100">
@@ -23,8 +24,8 @@
 
             <div class="hidden md:flex items-center gap-6 text-sm font-medium text-slate-600">
                 @foreach ($categories->take(5) as $cat)
-                    <a href="{{ route('storefront.index', ['tenant' => $tenantSlug, 'category' => $cat]) }}"
-                        class="hover:text-emerald-600">{{ $cat }}</a>
+                    <a href="{{ route('storefront.index', ['tenant' => $tenantSlug, 'category' => $cat->name]) }}"
+                        class="hover:text-emerald-600">{{ $cat->name }}</a>
                 @endforeach
             </div>
 
@@ -72,7 +73,7 @@
                 {{-- Galeria de Imagens --}}
                 <div class="space-y-4">
                     <div class="aspect-square bg-slate-100 rounded-3xl overflow-hidden relative group">
-                        <img src="{{ $product->image_url ?? 'https://picsum.photos/seed/' . urlencode((string) $product->id) . '/800/800' }}"
+                        <img src="{{ $product->primary_image_url ?? 'https://picsum.photos/seed/' . urlencode((string) $product->id) . '/800/800' }}"
                             alt="{{ $product->name }}"
                             class="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-500">
                         @if ($discount > 0)
@@ -83,13 +84,21 @@
                         @endif
                     </div>
                     <div class="grid grid-cols-4 gap-4">
-                        @for ($i = 0; $i < 4; $i++)
-                            <div
-                                class="aspect-square bg-slate-50 rounded-xl overflow-hidden cursor-pointer border-2 {{ $i === 0 ? 'border-emerald-500' : 'border-transparent hover:border-slate-200' }}">
-                                <img src="{{ $product->image_url ?? 'https://picsum.photos/seed/' . urlencode((string) $product->id) . '/200/200' }}"
-                                    class="w-full h-full object-cover">
-                            </div>
-                        @endfor
+                        @if ($gallery->isEmpty())
+                            @for ($i = 0; $i < 4; $i++)
+                                <div
+                                    class="aspect-square bg-slate-50 rounded-xl overflow-hidden cursor-pointer border-2 {{ $i === 0 ? 'border-emerald-500' : 'border-transparent hover:border-slate-200' }}">
+                                    <img src="{{ $product->primary_image_url ?? 'https://picsum.photos/seed/' . urlencode((string) $product->id) . '/200/200' }}"
+                                        class="w-full h-full object-cover">
+                                </div>
+                            @endfor
+                        @else
+                            @foreach ($gallery as $img)
+                                <div class="aspect-square bg-slate-50 rounded-xl overflow-hidden border-2 border-transparent hover:border-slate-200">
+                                    <img src="{{ $img->image_url }}" class="w-full h-full object-cover">
+                                </div>
+                            @endforeach
+                        @endif
                     </div>
                 </div>
 

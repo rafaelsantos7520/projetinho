@@ -4,8 +4,8 @@ namespace App\Console\Commands;
 
 use App\Models\Tenant;
 use App\Models\User;
+use App\Tenancy\TenantSchemaManager;
 use Illuminate\Console\Command;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 
 class TenantsMakeUserCommand extends Command
@@ -18,7 +18,7 @@ class TenantsMakeUserCommand extends Command
 
     protected $description = 'Cria/atualiza um usuário dentro do schema do tenant.';
 
-    public function handle(): int
+    public function handle(TenantSchemaManager $schemaManager): int
     {
         $slug = (string) $this->argument('tenant');
         $email = (string) $this->argument('email');
@@ -42,11 +42,10 @@ class TenantsMakeUserCommand extends Command
             return self::FAILURE;
         }
 
-        DB::purge('pgsql');
-        DB::reconnect('pgsql');
-        DB::connection('pgsql')->statement(sprintf('SET search_path TO "%s", public', $tenant->schema));
+        $schemaManager->setSearchPath($tenant->schema, true);
+        $tenantConnection = (string) config('tenancy.tenant_connection', config('database.default'));
 
-        $user = User::query()->updateOrCreate(
+        $user = User::on($tenantConnection)->updateOrCreate(
             ['email' => $email],
             ['name' => $name, 'password' => Hash::make($password)],
         );

@@ -6,19 +6,66 @@ use Illuminate\Support\Facades\DB;
 
 class TenantSchemaManager
 {
-    public function setSearchPath(string $schema): void
+    public function setSearchPath(string $schema, bool $reconnect = false): void
     {
-        if (! preg_match('/^[a-zA-Z_][a-zA-Z0-9_]*$/', $schema)) {
-            abort(400, 'Invalid tenant schema.');
+        $connectionName = (string) config('tenancy.tenant_connection', config('database.default'));
+
+        if ($reconnect) {
+            config(["database.connections.$connectionName.database" => $schema]);
+            DB::purge($connectionName);
+            DB::reconnect($connectionName);
         }
 
-        $schema = '"'.$schema.'"';
+        $connection = DB::connection($connectionName);
+        $driver = $connection->getDriverName();
 
-        DB::connection()->statement(sprintf('SET search_path TO %s, public', $schema));
+        if ($driver === 'pgsql') {
+            if (! preg_match('/^[a-zA-Z_][a-zA-Z0-9_]*$/', $schema)) {
+                abort(400, 'Invalid tenant schema.');
+            }
+
+            $schema = '"'.$schema.'"';
+            $connection->statement(sprintf('SET search_path TO %s, public', $schema));
+
+            return;
+        }
+
+        if ($driver === 'mysql' || $driver === 'mariadb') {
+            if (! preg_match('/^[a-zA-Z0-9_]+$/', $schema)) {
+                abort(400, 'Invalid tenant database.');
+            }
+
+            $escaped = str_replace('`', '``', $schema);
+            $connection->statement('USE `'.$escaped.'`');
+            if (method_exists($connection, 'setDatabaseName')) {
+                $connection->setDatabaseName($schema);
+            }
+
+            return;
+        }
+
+        abort(500, 'Unsupported database driver for tenancy.');
     }
 
     public function resetToPublic(): void
     {
-        DB::connection()->statement('SET search_path TO public');
+        $connectionName = (string) config('tenancy.tenant_connection', config('database.default'));
+        $connection = DB::connection($connectionName);
+        $driver = $connection->getDriverName();
+
+        if ($driver === 'pgsql') {
+            $connection->statement('SET search_path TO public');
+
+            return;
+        }
+
+        if ($driver === 'mysql' || $driver === 'mariadb') {
+            $database = (string) config('tenancy.fallback_database');
+            $this->setSearchPath($database);
+
+            return;
+        }
+
+        abort(500, 'Unsupported database driver for tenancy.');
     }
 }

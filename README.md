@@ -45,78 +45,55 @@ sudo apt-get update
 sudo apt-get install -y php8.2-sqlite3
 ```
 
-Alternativa: mude `DB_CONNECTION` no `.env` para `mysql` e configure as credenciais do MySQL.
+Alternativa: mude `DB_CONNECTION` no `.env` para `tenant` e configure as credenciais do MySQL.
 
-## Supabase (Postgres)
+## MySQL (local)
 
-Você pode usar a URL do Supabase, mas o essencial no Laravel é: habilitar `pdo_pgsql` no PHP e configurar `DB_CONNECTION=pgsql` com SSL.
+Este repositório suporta multi-tenancy em MySQL usando **um banco por tenant** (o campo `tenants.schema` passa a guardar o **nome do banco** do tenant).
 
-- Confirme o driver no PHP:
-
-```bash
-php -m | egrep -i 'pdo|pgsql'
-```
-
-- Em Debian/Ubuntu:
+Suba um MySQL local sem Docker:
 
 ```bash
-sudo apt-get update
-sudo apt-get install -y php8.2-pgsql
+./scripts/mysql-local-start.sh
+./scripts/mysql-local-bootstrap.sh
 ```
 
-- Se estiver usando `php artisan serve`, pare e suba de novo. Se estiver em nginx/apache com PHP-FPM, reinicie o serviço correspondente.
-
-- Exemplo de `.env` (não comite credenciais):
+No `.env` (exemplo):
 
 ```dotenv
-DB_CONNECTION=pgsql
-DB_HOST=your-project.supabase.co
-DB_PORT=5432
-DB_DATABASE=postgres
-DB_USERNAME=postgres
-DB_PASSWORD=your-password
-DB_SSLMODE=require
+DB_CONNECTION=tenant
+DB_TENANT_DRIVER=mysql
+DB_TENANT_HOST=127.0.0.1
+DB_TENANT_PORT=3307
+DB_TENANT_DATABASE=projetinho_landlord
+DB_TENANT_USERNAME=projetinho
+DB_TENANT_PASSWORD=projetinho
+
+DB_LANDLORD_DRIVER=mysql
+DB_LANDLORD_HOST=127.0.0.1
+DB_LANDLORD_PORT=3307
+DB_LANDLORD_DATABASE=projetinho_landlord
+DB_LANDLORD_USERNAME=projetinho
+DB_LANDLORD_PASSWORD=projetinho
+
+TENANCY_TENANT_CONNECTION=tenant
+TENANCY_FALLBACK_DATABASE=projetinho_landlord
 ```
 
-Se estiver com `SESSION_DRIVER=database`, garanta que a tabela `sessions` existe:
+## Banco
 
-```bash
-php artisan migrate
-```
+Esta aplicação usa **apenas MySQL**.
 
-## Usar um schema dedicado (Postgres)
-
-Por padrão, o Postgres usa o schema `public`, então as migrations criam as tabelas lá. Se você quer isolar o ambiente de teste (ex.: `app_test`), faça:
-
-1) Criar o schema no Supabase (SQL Editor):
-
-```sql
-create schema if not exists app_test;
-```
-
-2) Definir o schema no `.env`:
-
-```dotenv
-DB_SCHEMA=app_test
-```
-
-3) Limpar cache e rodar migrations (as tabelas vão para `app_test`):
-
-```bash
-php artisan config:clear
-php artisan migrate
-```
-
-## Multi-tenancy por schema (Postgres)
+## Multi-tenancy
 
 Estratégia:
 
-- **Landlord (public)**: guarda o cadastro de tenants (lojas) na tabela `tenants`.
-- **Tenant (um schema por loja)**: guarda as tabelas da aplicação (users, sessions, catálogo, etc).
+- **Landlord (um banco)**: guarda o cadastro de tenants (lojas) na tabela `tenants`.
+- **Tenant (um banco por loja)**: guarda as tabelas da aplicação (users, sessions, catálogo, etc).
 
 ### Como funciona no request
 
-O middleware [InitializeTenancy](file:///home/rafaeldev/projetos/projetinho/app/Http/Middleware/InitializeTenancy.php) resolve o tenant por:
+O middleware [InitializeTenancy](file:///home/rafael/projetos/projetinho/app/Http/Middleware/InitializeTenancy.php) resolve o tenant por:
 
 - Domínio cadastrado no tenant (campo `domain`), ou
 - Subdomínio (`loja1.seudominio.com`) quando `TENANCY_BASE_DOMAIN` está definido.
@@ -126,7 +103,7 @@ Em ambiente local, você também pode habilitar:
 - Header `X-Tenant` (valor = `slug`)
 - Query string `?tenant=<slug>`
 
-Quando encontra, ele executa `SET search_path TO "<schema_do_tenant>", public`.
+Quando encontra, ele ativa o contexto do tenant com `USE <banco_do_tenant>`.
 
 ### Configuração recomendada (subdomínio)
 

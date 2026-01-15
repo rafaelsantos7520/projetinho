@@ -18,6 +18,10 @@
 /public/storage
 /storage/*.key
 /storage/pail
+/storage/mysql-data
+/storage/mysql-tmp
+/storage/mysql.sock
+/storage/mysqld.pid
 /vendor
 Homestead.json
 Homestead.yaml

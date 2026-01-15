@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Category;
 use App\Models\Tenant;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
 class CategoryController extends Controller
@@ -26,9 +27,17 @@ class CategoryController extends Controller
     {
         $validated = $request->validate([
             'name' => 'required|string|max:255',
+            'image' => ['nullable', 'image', 'max:5120'],
+            'image_url' => ['nullable', 'url', 'max:2048'],
         ]);
 
         $validated['slug'] = Str::slug($validated['name']);
+
+        if ($request->hasFile('image')) {
+            $validated['image_url'] = $this->storeCategoryImage($request);
+        }
+
+        unset($validated['image']);
 
         Category::create($validated);
 
@@ -45,9 +54,24 @@ class CategoryController extends Controller
     {
         $validated = $request->validate([
             'name' => 'required|string|max:255',
+            'image' => ['nullable', 'image', 'max:5120'],
+            'image_url' => ['nullable', 'url', 'max:2048'],
+            'remove_image' => ['nullable', 'boolean'],
         ]);
 
         $validated['slug'] = Str::slug($validated['name']);
+
+        if ($request->boolean('remove_image')) {
+            $this->deleteLocalImageIfApplicable($category->image_url);
+            $validated['image_url'] = null;
+        }
+
+        if ($request->hasFile('image')) {
+            $this->deleteLocalImageIfApplicable($category->image_url);
+            $validated['image_url'] = $this->storeCategoryImage($request);
+        }
+
+        unset($validated['image'], $validated['remove_image']);
 
         $category->update($validated);
 
@@ -57,9 +81,47 @@ class CategoryController extends Controller
 
     public function destroy(Category $category)
     {
+        $this->deleteLocalImageIfApplicable($category->image_url);
         $category->delete();
 
         return redirect()->route('tenant_admin.categories.index', ['tenant' => app(Tenant::class)->slug])
             ->with('status', 'Categoria removida com sucesso!');
+    }
+
+    private function storeCategoryImage(Request $request): string
+    {
+        $tenant = app()->bound(Tenant::class) ? app(Tenant::class) : null;
+        $tenantSlug = $tenant?->slug ?? 'default';
+
+        $filePath = $request->file('image')->storePublicly(
+            'tenants/'.$tenantSlug.'/categories',
+            'public'
+        );
+
+        return Storage::disk('public')->url($filePath);
+    }
+
+    private function deleteLocalImageIfApplicable(?string $imageUrl): void
+    {
+        if (! is_string($imageUrl) || $imageUrl === '') {
+            return;
+        }
+
+        $path = parse_url($imageUrl, PHP_URL_PATH);
+        if (! is_string($path) || $path === '') {
+            return;
+        }
+
+        $prefix = '/storage/';
+        if (! str_starts_with($path, $prefix)) {
+            return;
+        }
+
+        $relative = ltrim(substr($path, strlen($prefix)), '/');
+        if ($relative === '') {
+            return;
+        }
+
+        Storage::disk('public')->delete($relative);
     }
 }

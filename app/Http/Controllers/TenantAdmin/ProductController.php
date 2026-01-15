@@ -5,9 +5,13 @@ namespace App\Http\Controllers\TenantAdmin;
 use App\Http\Controllers\Controller;
 use App\Models\Category;
 use App\Models\Product;
+use App\Models\ProductImage;
 use App\Models\Tenant;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 
 class ProductController extends Controller
@@ -47,6 +51,8 @@ class ProductController extends Controller
 
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
+            'images' => ['nullable', 'array', 'max:3'],
+            'images.*' => ['nullable', 'file', 'image', 'max:5120'],
             'image_url' => ['nullable', 'url', 'max:2048'],
             'category_id' => ['nullable', 'exists:categories,id'],
             'is_featured' => ['nullable', 'boolean'],
@@ -60,7 +66,29 @@ class ProductController extends Controller
 
         $validated['is_featured'] = (bool) ($validated['is_featured'] ?? false);
 
-        Product::query()->create($validated);
+        $images = $request->file('images') ?? [];
+        $images = is_array($images) ? $images : [$images];
+        $images = array_filter($images, fn ($f) => $f instanceof UploadedFile);
+        ksort($images);
+        $images = array_values($images);
+
+        unset($validated['images']);
+
+        $product = Product::query()->create($validated);
+
+        if (count($images) > 0) {
+            $urls = $this->storeProductImages($request, $images);
+
+            foreach ($urls as $i => $url) {
+                ProductImage::query()->create([
+                    'product_id' => $product->id,
+                    'image_url' => $url,
+                    'sort_order' => $i,
+                ]);
+            }
+
+            $product->update(['image_url' => $urls[0] ?? $product->image_url]);
+        }
 
         $tenant = app()->bound(Tenant::class) ? app(Tenant::class) : null;
 
@@ -71,6 +99,7 @@ class ProductController extends Controller
 
     public function edit(Product $product): View
     {
+        $product->load('images');
         $categories = Category::query()->orderBy('name')->get();
 
         return view('tenant_admin.products.edit', [
@@ -85,6 +114,13 @@ class ProductController extends Controller
 
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
+            'replace_images' => ['nullable', 'array'],
+            'replace_images.*' => ['nullable', 'file', 'image', 'max:5120'],
+            'add_images' => ['nullable', 'array', 'max:3'],
+            'add_images.*' => ['nullable', 'file', 'image', 'max:5120'],
+            'remove_images' => ['nullable', 'array'],
+            'remove_images.*' => ['integer'],
+            'primary_image_id' => ['nullable', 'integer'],
             'image_url' => ['nullable', 'url', 'max:2048'],
             'category_id' => ['nullable', 'exists:categories,id'],
             'is_featured' => ['nullable', 'boolean'],
@@ -98,7 +134,99 @@ class ProductController extends Controller
 
         $validated['is_featured'] = (bool) ($validated['is_featured'] ?? false);
 
+        $removeIds = $request->input('remove_images', []);
+        $removeIds = is_array($removeIds) ? $removeIds : [];
+
+        $primaryImageId = $request->input('primary_image_id');
+        $primaryImageId = is_numeric($primaryImageId) ? (int) $primaryImageId : null;
+
+        $replace = $request->file('replace_images') ?? [];
+        $replace = is_array($replace) ? $replace : [$replace];
+        $replace = array_filter($replace, fn ($f) => $f instanceof UploadedFile);
+
+        $add = $request->file('add_images') ?? [];
+        $add = is_array($add) ? $add : [$add];
+        $add = array_filter($add, fn ($f) => $f instanceof UploadedFile);
+        ksort($add);
+        $add = array_values($add);
+
+        unset($validated['replace_images'], $validated['add_images'], $validated['remove_images'], $validated['primary_image_id']);
+
+        if (count($removeIds) > 0) {
+            $toRemove = $product->images()->whereIn('id', $removeIds)->get();
+            foreach ($toRemove as $img) {
+                $this->deleteLocalImageIfApplicable($img->image_url);
+                $img->delete();
+            }
+        }
+
+        if (count($replace) > 0) {
+            $existing = $product->images()->whereIn('id', array_map('intval', array_keys($replace)))->get()->keyBy('id');
+
+            foreach ($replace as $id => $file) {
+                $id = (int) $id;
+                $img = $existing->get($id);
+                if (! $img) {
+                    throw ValidationException::withMessages([
+                        'replace_images' => ['Imagem para substituir inválida.'],
+                    ]);
+                }
+
+                $urls = $this->storeProductImages($request, [$file]);
+                $newUrl = $urls[0] ?? null;
+                if (is_string($newUrl) && $newUrl !== '') {
+                    $this->deleteLocalImageIfApplicable($img->image_url);
+                    $img->update(['image_url' => $newUrl]);
+                }
+            }
+        }
+
+        if ($primaryImageId !== null) {
+            $exists = $product->images()->where('id', $primaryImageId)->exists();
+            if (! $exists) {
+                throw ValidationException::withMessages([
+                    'primary_image_id' => ['Imagem principal inválida.'],
+                ]);
+            }
+        }
+
+        if (count($add) > 0) {
+            $existingCount = (int) $product->images()->count();
+            if ($existingCount + count($add) > 3) {
+                throw ValidationException::withMessages([
+                    'add_images' => ['Máximo 3 imagens por produto. Remova alguma antes de enviar novas.'],
+                ]);
+            }
+
+            $urls = $this->storeProductImages($request, $add);
+            $start = (int) $product->images()->max('sort_order');
+            $start = $start < 0 ? 0 : $start + 1;
+
+            foreach ($urls as $i => $url) {
+                ProductImage::query()->create([
+                    'product_id' => $product->id,
+                    'image_url' => $url,
+                    'sort_order' => $start + $i,
+                ]);
+            }
+        }
+
+        if ($primaryImageId !== null) {
+            $ids = $product->images()->orderBy('sort_order')->orderBy('id')->pluck('id')->all();
+            $ids = array_values(array_filter($ids, fn ($id) => (int) $id !== $primaryImageId));
+            array_unshift($ids, $primaryImageId);
+
+            foreach ($ids as $index => $id) {
+                ProductImage::query()->where('id', $id)->update(['sort_order' => $index]);
+            }
+        }
+
         $product->update($validated);
+
+        $first = $product->images()->orderBy('sort_order')->orderBy('id')->value('image_url');
+        if (is_string($first) && $first !== '' && $product->image_url !== $first) {
+            $product->update(['image_url' => $first]);
+        }
 
         $tenant = app()->bound(Tenant::class) ? app(Tenant::class) : null;
 
@@ -129,6 +257,11 @@ class ProductController extends Controller
 
     public function destroy(Product $product): RedirectResponse
     {
+        foreach ($product->images()->get() as $img) {
+            $this->deleteLocalImageIfApplicable($img->image_url);
+        }
+
+        $this->deleteLocalImageIfApplicable($product->image_url);
         $product->delete();
 
         $tenant = app()->bound(Tenant::class) ? app(Tenant::class) : null;
@@ -136,5 +269,47 @@ class ProductController extends Controller
         return redirect()
             ->route('tenant_admin.products.index', $tenant ? ['tenant' => $tenant->slug] : [])
             ->with('status', 'Produto excluído.');
+    }
+
+    private function storeProductImages(Request $request, array $images): array
+    {
+        $tenant = app()->bound(Tenant::class) ? app(Tenant::class) : null;
+        $tenantSlug = $tenant?->slug ?? 'default';
+
+        $urls = [];
+        foreach ($images as $file) {
+            $filePath = $file->storePublicly(
+                'tenants/'.$tenantSlug.'/products',
+                'public'
+            );
+
+            $urls[] = Storage::disk('public')->url($filePath);
+        }
+
+        return $urls;
+    }
+
+    private function deleteLocalImageIfApplicable(?string $imageUrl): void
+    {
+        if (! is_string($imageUrl) || $imageUrl === '') {
+            return;
+        }
+
+        $path = parse_url($imageUrl, PHP_URL_PATH);
+        if (! is_string($path) || $path === '') {
+            return;
+        }
+
+        $prefix = '/storage/';
+        if (! str_starts_with($path, $prefix)) {
+            return;
+        }
+
+        $relative = ltrim(substr($path, strlen($prefix)), '/');
+        if ($relative === '') {
+            return;
+        }
+
+        Storage::disk('public')->delete($relative);
     }
 }
