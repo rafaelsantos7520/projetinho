@@ -19,12 +19,16 @@ class TenantSchemaManager
         $connection = DB::connection($connectionName);
         $driver = $connection->getDriverName();
 
+        if ($driver === 'sqlite') {
+            return;
+        }
+
         if ($driver === 'pgsql') {
             if (! preg_match('/^[a-zA-Z_][a-zA-Z0-9_]*$/', $schema)) {
                 abort(400, 'Invalid tenant schema.');
             }
 
-            $schema = '"'.$schema.'"';
+            $schema = '"' . $schema . '"';
             $connection->statement(sprintf('SET search_path TO %s, public', $schema));
 
             return;
@@ -36,7 +40,7 @@ class TenantSchemaManager
             }
 
             $escaped = str_replace('`', '``', $schema);
-            $connection->statement('USE `'.$escaped.'`');
+            $connection->statement('USE `' . $escaped . '`');
             if (method_exists($connection, 'setDatabaseName')) {
                 $connection->setDatabaseName($schema);
             }
@@ -63,6 +67,10 @@ class TenantSchemaManager
             $database = (string) config('tenancy.fallback_database');
             $this->setSearchPath($database);
 
+            return;
+        }
+
+        if ($driver === 'sqlite') {
             return;
         }
 

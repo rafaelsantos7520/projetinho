@@ -19,7 +19,7 @@ class TenancyProvisioner
         ?string $ownerPassword = null,
         ?string $ownerName = null,
     ): Tenant {
-        $schema = $schema ?: 'tenant_'.Str::of($slug)->lower()->replace('-', '_');
+        $schema = $schema ?: 'tenant_' . Str::of($slug)->lower()->replace('-', '_');
 
         if (! preg_match('/^[a-zA-Z0-9][a-zA-Z0-9\\-_]{2,60}$/', $slug)) {
             abort(422, 'Slug inválido.');
@@ -107,7 +107,7 @@ class TenancyProvisioner
             $escaped = str_replace('`', '``', $schema);
             try {
                 DB::connection($landlordConnection)->statement(
-                    'CREATE DATABASE IF NOT EXISTS `'.$escaped.'` DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci'
+                    'CREATE DATABASE IF NOT EXISTS `' . $escaped . '` DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci'
                 );
             } catch (\Throwable) {
                 abort(422, 'Não foi possível criar o banco do tenant automaticamente. Crie o banco manualmente e tente novamente.');
