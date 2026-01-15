@@ -3,7 +3,7 @@
     <div class="max-w-7xl mx-auto">
         <div class="flex flex-col sm:flex-row sm:items-start justify-between gap-4 mb-6">
             <div>
-                <div class="text-2xl font-bold text-slate-900">Editar produto</div>
+                <div class="text-2xl font-bold text-slate-900">Editar produto da sua loja</div>
                 <div class="text-sm text-slate-500">Atualize informações, imagens e preços.</div>
             </div>
             <div class="flex gap-2">
