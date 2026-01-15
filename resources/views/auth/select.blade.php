@@ -2,7 +2,7 @@
     <div class="max-w-2xl mx-auto">
         <div class="rounded-2xl bg-white border border-slate-200 p-6">
             <div class="text-lg font-semibold">Escolha o login</div>
-            <div class="text-sm text-slate-600 mt-1">Plataforma (criar/listar lojas) ou Admin da loja (produtos).</div>
+            <div class="text-sm text-slate-600 mt-1">Plataforma (criar/listar lojas) ou Admin da loja e produtos  (produtos).</div>
 
             <div class="mt-6 grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <a href="{{ route('platform.login') }}"
