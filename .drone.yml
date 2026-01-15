@@ -1,0 +1,42 @@
+kind: pipeline
+type: docker
+name: deploy-laravel
+
+steps:
+  - name: install-backend
+    image: composer:2
+    commands:
+      - composer install --no-dev --prefer-dist --no-interaction --optimize-autoloader
+
+  - name: build-frontend
+    image: node:20
+    commands:
+      - npm ci
+      - npm run build
+
+  - name: deploy
+    image: appleboy/drone-ssh
+    settings:
+      host:
+        from_secret: ssh_host
+      username:
+        from_secret: ssh_user
+      key:
+        from_secret: ssh_key
+      port:
+        from_secret: ssh_port
+      script:
+        - cd /home/user/htdocs/srv1271384.hstgr.cloud/projetinho
+        - git pull origin main
+        - composer install --no-dev --prefer-dist --no-interaction --optimize-autoloader
+        - php artisan migrate --database=landlord --force
+        - php artisan config:cache
+        - php artisan route:cache
+        - php artisan view:cache
+
+trigger:
+  branch:
+    - main
+  event:
+    - push
+
