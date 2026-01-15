@@ -4,7 +4,7 @@
     <div class="max-w-6xl mx-auto space-y-8">
         <div class="flex items-center justify-between gap-4">
             <div>
-                <h1 class="text-2xl font-bold text-slate-900">Produtos</h1>
+                <h1 class="text-2xl font-bold text-slate-900">Produtos da sua loja</h1>
                 <p class="text-sm text-slate-500">Visão geral e gerenciamento dos produtos da loja.</p>
             </div>
         </div>
