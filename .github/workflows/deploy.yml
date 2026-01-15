@@ -33,6 +33,16 @@ jobs:
           npm ci
           npm run build
 
+      - name: Upload Vite build assets
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_KEY }}
+          port: ${{ secrets.SSH_PORT }}
+          source: "public/build/*"
+          target: "/home/user/htdocs/srv1271384.hstgr.cloud/projetinho/public/build"
+
       - name: Deploy via SSH
         uses: appleboy/ssh-action@v1.2.0
         with:
@@ -48,4 +58,3 @@ jobs:
             php artisan config:cache
             php artisan route:cache
             php artisan view:cache
-
