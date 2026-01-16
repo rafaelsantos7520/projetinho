@@ -1,6 +1,6 @@
 FROM php:8.2-fpm-alpine
 
-# Instalar dependências do sistema
+# Instalar dependências do sistema necessárias para compilar extensões PHP
 RUN apk add --no-cache \
     nginx \
     libpng-dev \
@@ -11,10 +11,16 @@ RUN apk add --no-cache \
     zip \
     unzip \
     git \
-    mysql-client
+    mysql-client \
+    icu-dev \
+    zlib-dev \
+    freetype-dev \
+    libjpeg-turbo-dev \
+    linux-headers
 
-# Instalar extensões PHP
-RUN docker-php-ext-install \
+# Configurar e instalar extensões PHP
+RUN docker-php-ext-configure gd --with-freetype --with-jpeg \
+    && docker-php-ext-install -j$(nproc) \
     pdo_mysql \
     mbstring \
     exif \
@@ -37,7 +43,7 @@ COPY . .
 RUN composer install --no-dev --optimize-autoloader --no-interaction
 
 # Configurar permissões
-RUN chown -R www-data:www-data /var/www/storage /var/www/cache
+RUN chown -R www-data:www-data /var/www/storage /var/www/bootstrap/cache
 
 # Configurar Nginx
 COPY docker/nginx.conf /etc/nginx/http.d/default.conf
