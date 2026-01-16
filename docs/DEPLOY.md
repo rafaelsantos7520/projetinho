@@ -67,3 +67,4 @@ TENANCY_FALLBACK_DATABASE=projetinho_landlord
 - Lista de lojas (plataforma): `/platform/tenants`
 - Catálogo (dev): `/?tenant=loja-abc`
 - Admin da loja (dev): `/admin/login?tenant=loja-abc`
+- Admin da loja (prod): `/admin?tenant=loja-abc`
