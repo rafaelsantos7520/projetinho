@@ -26,7 +26,7 @@ DB_LANDLORD_USERNAME=root
 DB_LANDLORD_PASSWORD=root
 
 TENANCY_TENANT_CONNECTION=tenant
-TENANCY_FALLBACK_DATABASE=projetinho_landlord
+TENANCY_FALLBACK_DATABASE=projetinho_landlorda
 ```
 
 ## Subir MySQL local (sem Docker)

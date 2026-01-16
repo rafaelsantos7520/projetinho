@@ -77,24 +77,40 @@
 
             @if (session('created_tenant_slug'))
                 @php($slug = session('created_tenant_slug'))
+                @php($baseDomain = config('tenancy.base_domain'))
                 <div class="rounded-xl border border-slate-200 bg-slate-50 p-4 mb-4">
                     <div class="text-sm font-medium">Loja criada: <span class="font-mono">{{ $slug }}</span>
                     </div>
-                    <div class="text-xs text-slate-600 mt-1">No dev você pode usar query string, e em produção use
-                        subdomínio.</div>
+                    <div class="text-xs text-slate-600 mt-1">
+                        @if ($baseDomain)
+                            Acesse via subdomínio: <span
+                                class="font-semibold">{{ $slug }}.{{ $baseDomain }}</span>
+                        @else
+                            Acesse via parâmetro: <span class="font-semibold">?tenant={{ $slug }}</span>
+                        @endif
+                    </div>
                 </div>
 
                 <div class="space-y-2">
+                    @php
+                        $url = $baseDomain
+                            ? "https://{$slug}.{$baseDomain}"
+                            : route('storefront.index', ['tenant' => $slug]);
+
+                        $adminUrl = $baseDomain
+                            ? "https://{$slug}.{$baseDomain}/admin/products"
+                            : route('tenant_admin.products.index', ['tenant' => $slug]);
+                    @endphp
+
                     <a class="block rounded-xl border border-slate-200 bg-white px-4 py-3 hover:bg-slate-50"
-                        href="{{ route('storefront.index', ['tenant' => $slug]) }}">
-                        <div class="text-sm font-medium">Abrir catálogo (dev)</div>
-                        <div class="text-xs text-slate-600">{{ route('storefront.index', ['tenant' => $slug]) }}</div>
+                        href="{{ $url }}" target="_blank">
+                        <div class="text-sm font-medium">Abrir catálogo</div>
+                        <div class="text-xs text-slate-600">{{ $url }}</div>
                     </a>
                     <a class="block rounded-xl border border-slate-200 bg-white px-4 py-3 hover:bg-slate-50"
-                        href="{{ route('tenant_admin.products.index', ['tenant' => $slug]) }}">
-                        <div class="text-sm font-medium">Abrir admin de produtos (dev)</div>
-                        <div class="text-xs text-slate-600">
-                            {{ route('tenant_admin.products.index', ['tenant' => $slug]) }}</div>
+                        href="{{ $adminUrl }}" target="_blank">
+                        <div class="text-sm font-medium">Painel da Loja (Admin)</div>
+                        <div class="text-xs text-slate-600">{{ $adminUrl }}</div>
                     </a>
                 </div>
             @else
