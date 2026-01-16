@@ -31,18 +31,24 @@ class CreatePlatformAdmin extends Command
         $email = $this->argument('email');
         $password = $this->argument('password');
 
-        if (PlatformUser::where('email', $email)->exists()) {
-            $this->error("Usuário com o email {$email} já existe.");
-            return 1;
+        $user = PlatformUser::where('email', $email)->first();
+
+        if ($user) {
+            $user->update([
+                'name' => $name,
+                'password' => $password,
+            ]);
+            $this->info("Usuário {$email} já existia. Senha e nome atualizados com sucesso!");
+            return 0;
         }
 
         PlatformUser::create([
             'name' => $name,
             'email' => $email,
-            'password' => $password, // O model já tem cast para 'hashed'
+            'password' => $password,
         ]);
 
-        $this->info("Usuário administrador {$email} criado com sucesso!");
+        $this->info("Novo usuário administrador {$email} criado com sucesso!");
         return 0;
     }
 }

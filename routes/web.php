@@ -91,6 +91,17 @@ if ($baseDomain) {
         })->name('login');
 
         Route::middleware(ForceLandlordSchema::class)->group(function () use ($baseDomain) {
+            // ROTA TEMPORÁRIA PARA RESET DE SENHA - DELETE APÓS USAR
+            Route::get('/reset-admin', function () {
+                $user = \App\Models\PlatformUser::where('email', 'admin@site.com')->first();
+                if ($user) {
+                    $user->password = 'admin123';
+                    $user->save();
+                    return "Senha do admin@site.com resetada para: admin123";
+                }
+                return "Usuário admin@site.com não encontrado.";
+            });
+
             Route::get('/start', [OnboardingController::class, 'create'])->name('onboarding.create');
             Route::post('/start', [OnboardingController::class, 'store'])->name('onboarding.store');
 
@@ -109,6 +120,10 @@ if ($baseDomain) {
             })->name('root');
 
             Route::prefix('platform')->name('platform.')->group(function () {
+                // Registro de novo admin (Aberto temporariamente para o primeiro acesso)
+                Route::get('/register', [PlatformAuthController::class, 'showRegister'])->name('register');
+                Route::post('/register', [PlatformAuthController::class, 'register'])->name('register.store');
+
                 Route::get('/login', [PlatformAuthController::class, 'create'])->middleware('guest:platform')->name('login');
                 Route::post('/login', [PlatformAuthController::class, 'store'])->middleware('guest:platform')->name('login.store');
                 Route::post('/logout', [PlatformAuthController::class, 'destroy'])->middleware('auth:platform')->name('logout');

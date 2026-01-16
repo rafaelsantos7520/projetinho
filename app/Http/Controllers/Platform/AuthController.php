@@ -2,14 +2,40 @@
 
 namespace App\Http\Controllers\Platform;
 
+use App\Models\PlatformUser;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\View\View;
 
 class AuthController extends Controller
 {
+    public function showRegister(): View
+    {
+        return view('platform.auth.register');
+    }
+
+    public function register(Request $request): RedirectResponse
+    {
+        $validated = $request->validate([
+            'name' => ['required', 'string', 'max:255'],
+            'email' => ['required', 'string', 'email', 'max:255', 'unique:platform_users'],
+            'password' => ['required', 'string', 'min:8', 'confirmed'],
+        ]);
+
+        $user = PlatformUser::create([
+            'name' => $validated['name'],
+            'email' => $validated['email'],
+            'password' => $validated['password'], // Hash automático via model cast
+        ]);
+
+        Auth::guard('platform')->login($user);
+
+        return redirect()->route('platform.tenants.index');
+    }
+
     public function create(): View
     {
         return view('platform.auth.login');
