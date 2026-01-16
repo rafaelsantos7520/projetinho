@@ -48,11 +48,14 @@ WORKDIR /var/www
 # Copiar arquivos do projeto
 COPY . .
 
+# Instalar dependências do Composer
+RUN composer install --no-dev --optimize-autoloader --no-interaction
+
 # Copiar os assets compilados do estágio de build
 COPY --from=build-stage /app/public/build ./public/build
 
-# Instalar dependências do Composer
-RUN composer install --no-dev --optimize-autoloader --no-interaction
+# Garantir que a pasta build existe e tem permissão
+RUN mkdir -p public/build && chown -R www-data:www-data public/build
 
 # Configurar permissões
 RUN chown -R www-data:www-data /var/www/storage /var/www/bootstrap/cache
