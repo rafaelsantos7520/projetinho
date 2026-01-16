@@ -1,3 +1,12 @@
+# Estágio de Build (Node.js)
+FROM node:20-alpine AS build-stage
+WORKDIR /app
+COPY package*.json ./
+RUN npm install
+COPY . .
+RUN npm run build
+
+# Estágio Final (PHP + Nginx)
 FROM php:8.2-fpm-alpine
 
 # Instalar dependências do sistema necessárias para compilar extensões PHP
@@ -38,6 +47,9 @@ WORKDIR /var/www
 
 # Copiar arquivos do projeto
 COPY . .
+
+# Copiar os assets compilados do estágio de build
+COPY --from=build-stage /app/public/build ./public/build
 
 # Instalar dependências do Composer
 RUN composer install --no-dev --optimize-autoloader --no-interaction
