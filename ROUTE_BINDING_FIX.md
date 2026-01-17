@@ -2,41 +2,63 @@
 
 ## Problema Identificado
 
-O erro `TypeError: Argument #1 ($product) must be of type App\Models\Product, string given` ocorria em produção porque o **Implicit Route Model Binding** do Laravel não estava funcionando corretamente no contexto multi-tenant.
+Dois problemas foram identificados:
 
-### Causa Raiz
+### 1. TypeError no Route Model Binding
+O erro `TypeError: Argument #1 ($product) must be of type App\Models\Product, string given` ocorria porque o **Implicit Route Model Binding** do Laravel não funcionava corretamente no contexto multi-tenant (ordem de execução dos middlewares).
 
-A ordem de execução dos middlewares causava um problema:
-1. `SubstituteBindings` (middleware que faz route model binding) executava ANTES
-2. `InitializeTenancy` (middleware que configura o schema do tenant) executava DEPOIS
+### 2. Erro 404 após correção inicial
+Após mudar para busca manual, os produtos retornavam 404 porque os Models estavam usando a conexão de banco DEFAULT ao invés da conexão `tenant` que foi configurada pelo `TenantSchemaManager`.
 
-Resultado: O Laravel tentava buscar o produto no banco de dados ANTES do contexto do tenant estar configurado, causando falha no binding e passando a string do ID ao invés do modelo.
+## Soluções Implementadas
 
-### Por que funcionava localmente?
+### Solução 1: Substituir Route Model Binding por Busca Manual
 
-- **Local**: Sem route caching, o Laravel processa as rotas a cada request
-- **Produção**: Com route caching (`php artisan route:cache`), qualquer inconsistência na ordem de execução ou no cache causa o erro
+Mudamos de:
+```php
+public function show(Product $product): View  // Implicit binding
+```
 
-## Solução Implementada
+Para:
+```php
+public function show(string $product): View
+{
+    $product = Product::query()
+        ->where('id', $product)
+        ->where('is_active', true)
+        ->firstOrFail();
+    // ...
+}
+```
 
-Substituímos o **Implicit Route Model Binding** por **busca manual explícita** do modelo dentro do controller. Isso garante que a busca no banco de dados aconteça DEPOIS que o contexto do tenant esteja 100% configurado.
+### Solução 2: Garantir que todos os Models usem a conexão correta
 
-### Arquivos Modificados
+Adicionamos `getConnectionName()` a todos os models de tenant para garantir que usem a conexão configurada em `config('tenancy.tenant_connection')`:
 
-1. **StorefrontController.php**
-   - `show(string $product)` - Busca manual do produto
+```php
+public function getConnectionName(): ?string
+{
+    return config('tenancy.tenant_connection', config('database.default'));
+}
+```
 
-2. **TenantAdmin/ProductController.php**
-   - `edit(string $product)` - Busca manual do produto
-   - `update(Request $request, string $product)` - Busca manual do produto
-   - `duplicate(string $product)` - Busca manual do produto
-   - `destroy(string $product)` - Busca manual do produto
+## Arquivos Modificados
 
-3. **TenantAdmin/CategoryController.php**
-   - `edit(string $category)` - Busca manual da categoria
-   - `update(Request $request, string $category)` - Busca manual da categoria
-   - `destroy(string $category)` - Busca manual da categoria
-   - `toggle(string $category)` - Busca manual da categoria
+### Controllers (busca manual)
+1. **StorefrontController.php** - `show()`
+2. **TenantAdmin/ProductController.php** - `edit()`, `update()`, `duplicate()`, `destroy()`
+3. **TenantAdmin/CategoryController.php** - `edit()`, `update()`, `destroy()`, `toggle()`
+
+### Models (conexão correta)
+1. **Product.php** - adicionado `getConnectionName()`
+2. **Category.php** - adicionado `getConnectionName()`
+3. **ProductImage.php** - adicionado `getConnectionName()`
+4. **ProductOption.php** - adicionado `getConnectionName()`
+5. **ProductOptionValue.php** - adicionado `getConnectionName()`
+6. **StoreSettings.php** - adicionado `getConnectionName()`
+7. **User.php** - adicionado `getConnectionName()`
+
+**Nota:** Os models `Tenant` e `PlatformUser` já usam `protected $connection = 'landlord'` explicitamente.
 
 ## Instruções para Deploy em Produção
 
@@ -44,68 +66,62 @@ Substituímos o **Implicit Route Model Binding** por **busca manual explícita**
 
 ```bash
 git add .
-git commit -m "fix: Substituir route model binding por busca explícita no contexto multi-tenant"
+git commit -m "fix: Corrigir conexão de banco multi-tenant e route model binding"
 git push origin main
 ```
 
 ### 2. No servidor de produção, após fazer pull do código:
 
 ```bash
-# Limpar todos os caches
+# Limpar todos os caches (OBRIGATÓRIO)
 php artisan optimize:clear
 
 # OU executar individualmente:
-php artisan route:clear
 php artisan config:clear
+php artisan route:clear
 php artisan view:clear
 php artisan cache:clear
 
-# Recriar os caches otimizados
+# Recriar os caches otimizados (opcional, melhora performance)
 php artisan optimize
 ```
 
 ### 3. Testar as seguintes URLs em produção:
 
+- ✅ `https://loja3.emdigital.shop/` (página inicial)
 - ✅ `https://loja3.emdigital.shop/produto/4` (visualização do produto)
+- ✅ `https://loja3.emdigital.shop/admin/products` (lista de produtos)
 - ✅ `https://loja3.emdigital.shop/admin/products/4/edit` (edição do produto)
-- ✅ `https://loja3.emdigital.shop/admin/categories/1/edit` (edição de categoria)
+- ✅ `https://loja3.emdigital.shop/admin/categories` (lista de categorias)
 
-## Vantagens da Solução
+## Por que o erro acontecia apenas em PRODUÇÃO?
 
-1. ✅ **Controle Total**: Você decide exatamente quando e como buscar o modelo
-2. ✅ **Contexto Garantido**: A busca sempre acontece DEPOIS do tenant estar configurado
-3. ✅ **Mais Explícito**: Código mais fácil de entender e debugar
-4. ✅ **Sem Dependência de Ordem**: Não depende da ordem de execução dos middlewares
-5. ✅ **Funciona em Qualquer Ambiente**: Local, staging, produção - todos funcionam igual
+| Aspecto | Local | Produção |
+|---------|-------|----------|
+| **Modo** | Path (`?tenant=loja3`) | Subdomínio (`loja3.emdigital.shop`) |
+| **DB_CONNECTION** | `sqlite` ou `tenant` | `tenant` ou `mysql` |
+| **Route Cache** | Desabilitado | Habilitado (`route:cache`) |
+| **Config Cache** | Desabilitado | Habilitado (`config:cache`) |
 
-## Exemplo de Mudança
+A combinação de cache de rotas/config com diferentes conexões de banco causava inconsistências que não apareciam localmente.
 
-### Antes (Implicit Binding)
-```php
-public function show(Product $product): View
-{
-    // Laravel automaticamente busca o produto
-    // MAS pode falhar se o contexto do tenant não estiver pronto
-    return view('storefront.show', compact('product'));
-}
+## Arquitetura Final
+
+```
+Request → InitializeTenancy (configura schema) → Controller
+                                                    ↓
+                                              Model::query()
+                                                    ↓
+                                          getConnectionName() 
+                                                    ↓
+                                       config('tenancy.tenant_connection')
+                                                    ↓
+                                          Conexão 'tenant' com
+                                          schema correto (tenant_loja3)
 ```
 
-### Depois (Explicit Query)
-```php
-public function show(string $product): View
-{
-    // Busca manual DEPOIS que o tenant está configurado
-    $product = Product::query()
-        ->where('id', $product)
-        ->where('is_active', true)
-        ->firstOrFail();
-    
-    return view('storefront.show', compact('product'));
-}
-```
-
-## Notas Importantes
-
-- ⚠️ **Não remova** o middleware `InitializeTenancy` - ele é essencial
-- ⚠️ **Sempre limpe os caches** após fazer deploy de mudanças nas rotas
-- ✅ Esta solução é **permanente** e resolve o problema definitivamente
+Esta solução garante que:
+1. ✅ O contexto do tenant está sempre configurado ANTES da query
+2. ✅ Todos os models usam a mesma conexão configurada
+3. ✅ Funciona em todos os ambientes (local, staging, produção)
+4. ✅ Funciona em todos os modos (path, subdomínio)

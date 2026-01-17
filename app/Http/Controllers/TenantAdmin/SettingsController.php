@@ -84,6 +84,9 @@ class SettingsController extends Controller
 
         $settings->update($validated);
 
+        // Clear the settings cache so next request gets fresh data
+        StoreSettings::clearCache();
+
         $tenant = app(Tenant::class);
 
         return redirect()

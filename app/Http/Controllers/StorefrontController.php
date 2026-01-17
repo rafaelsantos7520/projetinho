@@ -107,7 +107,17 @@ class StorefrontController extends Controller
     {
         $storeSettings = StoreSettings::current();
 
-        $relations = ['category'];
+        // Carregar categorias uma única vez para reutilizar
+        $categories = Category::query()
+            ->where('is_active', true)
+            ->whereHas('products', function ($q) {
+                $q->where('is_active', true);
+            })
+            ->orderBy('name')
+            ->get()
+            ->keyBy('id');
+
+        $relations = [];
         if (Product::productImagesTableExists()) {
             $relations[] = 'images';
         }
@@ -118,6 +128,11 @@ class StorefrontController extends Controller
             ->where('id', $product)
             ->where('is_active', true)
             ->firstOrFail();
+
+        // Definir a categoria do cache carregado
+        if ($categories->has($product->category_id)) {
+            $product->setRelation('category', $categories->get($product->category_id));
+        }
 
         // Se não tem a tabela de imagens, define uma coleção vazia
         if (! Product::productImagesTableExists()) {
@@ -132,19 +147,18 @@ class StorefrontController extends Controller
             ->limit(4)
             ->get();
 
-        $categories = Category::query()
-            ->where('is_active', true)
-            ->whereHas('products', function ($q) {
-                $q->where('is_active', true);
-            })
-            ->orderBy('name')
-            ->get();
+        // Definir categorias dos produtos relacionados do cache
+        foreach ($related as $relatedProduct) {
+            if ($categories->has($relatedProduct->category_id)) {
+                $relatedProduct->setRelation('category', $categories->get($relatedProduct->category_id));
+            }
+        }
 
         return view('storefront.show', [
             'storeSettings' => $storeSettings,
             'product' => $product,
             'related' => $related,
-            'categories' => $categories,
+            'categories' => $categories->values(),
         ]);
     }
 }

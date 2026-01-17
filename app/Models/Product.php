@@ -9,6 +9,13 @@ use Illuminate\Support\Facades\Schema;
 
 class Product extends Model
 {
+    /**
+     * Override the connection to use tenant connection dynamically
+     */
+    public function getConnectionName(): ?string
+    {
+        return config('tenancy.tenant_connection', config('database.default'));
+    }
     protected $fillable = [
         'name',
         'image_url',
@@ -76,26 +83,42 @@ class Product extends Model
         }
     }
 
+    protected static ?bool $productImagesTableExistsCache = null;
+    protected static ?bool $productImagesSortOrderColumnExistsCache = null;
+
     public static function productImagesTableExists(): bool
     {
-        try {
-            return Schema::hasTable('product_images');
-        } catch (\Throwable) {
-            return false;
+        if (static::$productImagesTableExistsCache !== null) {
+            return static::$productImagesTableExistsCache;
         }
+
+        try {
+            static::$productImagesTableExistsCache = Schema::hasTable('product_images');
+        } catch (\Throwable) {
+            static::$productImagesTableExistsCache = false;
+        }
+
+        return static::$productImagesTableExistsCache;
     }
 
     public static function productImagesSortOrderColumnExists(): bool
     {
+        if (static::$productImagesSortOrderColumnExistsCache !== null) {
+            return static::$productImagesSortOrderColumnExistsCache;
+        }
+
         if (! static::productImagesTableExists()) {
+            static::$productImagesSortOrderColumnExistsCache = false;
             return false;
         }
 
         try {
-            return Schema::hasColumn('product_images', 'sort_order');
+            static::$productImagesSortOrderColumnExistsCache = Schema::hasColumn('product_images', 'sort_order');
         } catch (\Throwable) {
-            return false;
+            static::$productImagesSortOrderColumnExistsCache = false;
         }
+
+        return static::$productImagesSortOrderColumnExistsCache;
     }
 
     /**

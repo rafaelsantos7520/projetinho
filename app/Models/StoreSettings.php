@@ -6,6 +6,11 @@ use Illuminate\Database\Eloquent\Model;
 
 class StoreSettings extends Model
 {
+    public function getConnectionName(): ?string
+    {
+        return config('tenancy.tenant_connection', config('database.default'));
+    }
+
     protected $table = 'store_settings';
 
     protected $fillable = [
@@ -20,10 +25,26 @@ class StoreSettings extends Model
         'banner_3_url',
     ];
 
+    protected static ?self $currentCache = null;
+
     public static function current(): self
     {
-        return static::firstOrCreate([], [
+        if (static::$currentCache !== null) {
+            return static::$currentCache;
+        }
+
+        static::$currentCache = static::firstOrCreate([], [
             'primary_color' => '#0f172a',
         ]);
+
+        return static::$currentCache;
+    }
+
+    /**
+     * Clear the cache (useful after updates)
+     */
+    public static function clearCache(): void
+    {
+        static::$currentCache = null;
     }
 }

@@ -7,6 +7,14 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Category extends Model
 {
+    /**
+     * Override the connection to use tenant connection dynamically
+     */
+    public function getConnectionName(): ?string
+    {
+        return config('tenancy.tenant_connection', config('database.default'));
+    }
+
     protected $fillable = ['name', 'slug', 'image_url', 'is_active', 'is_default', 'sort_order'];
 
     protected $casts = [

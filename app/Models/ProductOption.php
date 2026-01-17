@@ -8,6 +8,11 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class ProductOption extends Model
 {
+    public function getConnectionName(): ?string
+    {
+        return config('tenancy.tenant_connection', config('database.default'));
+    }
+
     protected $fillable = ['product_id', 'name', 'sort_order'];
 
     public function product(): BelongsTo

@@ -7,6 +7,11 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class ProductOptionValue extends Model
 {
+    public function getConnectionName(): ?string
+    {
+        return config('tenancy.tenant_connection', config('database.default'));
+    }
+
     protected $fillable = ['option_id', 'value', 'price_modifier_cents', 'sort_order'];
 
     public function option(): BelongsTo
