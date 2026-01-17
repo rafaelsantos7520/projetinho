@@ -60,6 +60,7 @@ $tenantRoutes = function () {
             Route::post('/products/{productId}/duplicate', [TenantAdminProductController::class, 'duplicate'])->name('products.duplicate');
             Route::delete('/products/{productId}', [TenantAdminProductController::class, 'destroy'])->name('products.destroy');
 
+            Route::patch('/categories/{categoryId}/toggle', [TenantAdminCategoryController::class, 'toggle'])->name('categories.toggle');
             Route::resource('categories', TenantAdminCategoryController::class)->parameters([
                 'categories' => 'categoryId'
             ]);

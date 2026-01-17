@@ -64,7 +64,7 @@
                             </td>
                             <td class="px-6 py-4 text-slate-500">{{ $category->slug }}</td>
                             <td class="px-6 py-4 text-center">
-                                <form action="{{ route('tenant_admin.categories.toggle', ['category' => $category->id, 'tenant' => $tenantSlug]) }}" method="POST" class="inline-block toggle-form">
+                                <form action="{{ route('tenant_admin.categories.toggle', ['categoryId' => $category->id, 'tenant' => $tenantSlug]) }}" method="POST" class="inline-block toggle-form">
                                     @csrf
                                     @method('PATCH')
                                     <label class="toggle-switch">
@@ -79,8 +79,8 @@
                             <td class="px-6 py-4">
                                 <div class="flex items-center justify-center gap-3">
                                     @if (!$category->is_default)
-                                        <a href="{{ route('tenant_admin.categories.edit', ['category' => $category->id, 'tenant' => $tenantSlug]) }}" class="text-indigo-600 hover:text-indigo-900 font-medium">Editar</a>
-                                        <form action="{{ route('tenant_admin.categories.destroy', ['category' => $category->id, 'tenant' => $tenantSlug]) }}" method="POST" onsubmit="return confirm('Tem certeza? Esta ação não pode ser desfeita.');">
+                                        <a href="{{ route('tenant_admin.categories.edit', ['categoryId' => $category->id, 'tenant' => $tenantSlug]) }}" class="text-indigo-600 hover:text-indigo-900 font-medium">Editar</a>
+                                        <form action="{{ route('tenant_admin.categories.destroy', ['categoryId' => $category->id, 'tenant' => $tenantSlug]) }}" method="POST" onsubmit="return confirm('Tem certeza? Esta ação não pode ser desfeita.');">
                                             @csrf
                                             @method('DELETE')
                                             <button type="submit" class="text-red-600 hover:text-red-900 font-medium">Excluir</button>
