@@ -18,6 +18,86 @@
     <style>
         :root {
             --primary-color: {{ $storeSettings->primary_color ?? '#0f172a' }};
+            --primary-strong: color-mix(in srgb, var(--primary-color) 76%, #000);
+            --primary-soft: color-mix(in srgb, var(--primary-color) 10%, #fff);
+            --primary-soft-2: color-mix(in srgb, var(--primary-color) 16%, #fff);
+            --primary-border: color-mix(in srgb, var(--primary-color) 26%, #fff);
+        }
+        .text-primary {
+            color: var(--primary-color);
+        }
+        .bg-primary {
+            background-color: var(--primary-color);
+        }
+        .bg-primary-strong {
+            background-color: var(--primary-strong);
+        }
+        .bg-primary-soft {
+            background-color: var(--primary-soft);
+        }
+        .border-primary {
+            border-color: var(--primary-color);
+        }
+        .border-primary-soft {
+            border-color: var(--primary-border);
+        }
+        .ring-primary {
+            --tw-ring-color: var(--primary-color);
+        }
+        .hover\:bg-primary:hover {
+            background-color: var(--primary-color);
+        }
+        .hover\:bg-primary-soft:hover {
+            background-color: var(--primary-soft-2);
+        }
+        .hover\:text-primary:hover {
+            color: var(--primary-color);
+        }
+        .hover\:border-primary:hover {
+            border-color: var(--primary-color);
+        }
+        @keyframes fade-in-up {
+            from {
+                opacity: 0;
+                transform: translate3d(0, 18px, 0);
+            }
+            to {
+                opacity: 1;
+                transform: translate3d(0, 0, 0);
+            }
+        }
+        @keyframes slow-zoom {
+            from {
+                transform: scale(1.02);
+            }
+            to {
+                transform: scale(1.08);
+            }
+        }
+        @keyframes float {
+            0%,
+            100% {
+                transform: translate3d(0, 0, 0);
+            }
+            50% {
+                transform: translate3d(0, -6px, 0);
+            }
+        }
+        .animate-fade-in-up {
+            animation: fade-in-up 700ms cubic-bezier(.2, .8, .2, 1) both;
+        }
+        .animate-slow-zoom {
+            animation: slow-zoom 10s ease-in-out both;
+        }
+        .animate-float {
+            animation: float 6s ease-in-out infinite;
+        }
+        @media (prefers-reduced-motion: reduce) {
+            .animate-fade-in-up,
+            .animate-slow-zoom,
+            .animate-float {
+                animation: none !important;
+            }
         }
     </style>
 </head>

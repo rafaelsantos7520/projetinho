@@ -6,30 +6,13 @@
             $storeSettings->banner_2_url,
             $storeSettings->banner_3_url,
         ]));
-        
-        // BIO FALLBACK
         $bio = $storeSettings->biography;
         $hasBio = !empty($bio);
         $displayBio = $hasBio ? $bio : "Bem-vindo à nossa loja! Somos apaixonados por oferecer os melhores produtos com qualidade e estilo. Nossa missão é proporcionar uma experiência de compra incrível, com peças selecionadas especialmente para você. Explore nossa coleção e descubra o que preparamos.";
-        
-        // COLOR PALETTE
-        $primaryColor = $storeSettings->primary_color ?? '#0f172a'; // Default slate-900
     @endphp
 
-    {{-- STYLE OVERRIDES FOR PRIMARY COLOR --}}
-    <style>
-        :root {
-            --primary-color: {{ $primaryColor }};
-        }
-        .text-primary { color: var(--primary-color); }
-        .bg-primary { background-color: var(--primary-color); }
-        .border-primary { border-color: var(--primary-color); }
-        .hover\:bg-primary:hover { background-color: var(--primary-color); }
-        .ring-primary { --tw-ring-color: var(--primary-color); }
-    </style>
-
     {{-- Topbar --}}
-    <div class="bg-slate-900 text-white text-xs py-2.5 font-medium tracking-wide">
+    <div class="bg-primary-strong text-white text-xs py-2.5 font-medium tracking-wide">
         <div class="max-w-7xl mx-auto px-4 flex justify-center sm:justify-between items-center text-center sm:text-left">
             <p class="hidden sm:block">Enviamos para todo o Brasil com segurança</p>
             <p class="flex items-center gap-2 justify-center w-full sm:w-auto">
@@ -50,7 +33,7 @@
                      @if(isset($storeSettings) && $storeSettings->logo_url)
                         <img src="{{ $storeSettings->logo_url }}" alt="Logo" class="h-12 w-auto object-contain transition-transform group-hover:scale-105 drop-shadow-sm">
                     @else
-                        <div class="h-10 w-10 bg-slate-900 rounded-xl flex items-center justify-center text-white font-bold text-xl shadow-lg shadow-slate-900/20 group-hover:shadow-slate-900/40 transition-all rotate-3 group-hover:rotate-0">
+                        <div class="h-10 w-10 bg-primary rounded-xl flex items-center justify-center text-white font-bold text-xl shadow-lg shadow-slate-900/20 group-hover:shadow-slate-900/40 transition-all rotate-3 group-hover:rotate-0">
                             {{ strtoupper(substr($tenantSlug, 0, 1)) }}
                         </div>
                         <span class="text-xl font-bold tracking-tight text-slate-900 group-hover:text-primary transition-colors hidden sm:block">{{ ucfirst($tenantSlug) }}</span>
@@ -59,7 +42,7 @@
             </a>
 
             {{-- Busca Desktop --}}
-            <form action="{{ route('storefront.index') }}" method="GET" class="hidden md:flex flex-1 max-w-lg relative group">
+            <form action="{{ route('storefront.index', ['tenant' => $tenantSlug]) }}" method="GET" class="hidden md:flex flex-1 max-w-lg relative group">
                 <input type="hidden" name="tenant" value="{{ $tenantSlug }}">
                 <div class="relative w-full">
                     <input name="q" value="{{ $filters['q'] ?? '' }}" placeholder="Buscar produtos..."
@@ -91,7 +74,7 @@
 
         {{-- Mobile Search Overlay --}}
         <div x-show="searchOpen" x-transition class="md:hidden absolute top-full left-0 w-full bg-white border-b border-slate-100 p-4 shadow-lg z-0">
-             <form action="{{ route('storefront.index') }}" method="GET" class="relative">
+             <form action="{{ route('storefront.index', ['tenant' => $tenantSlug]) }}" method="GET" class="relative">
                 <input type="hidden" name="tenant" value="{{ $tenantSlug }}">
                 <input name="q" placeholder="O que você procura?" class="w-full bg-slate-50 border border-slate-200 rounded-lg py-3 pl-10 pr-4 text-sm focus:outline-none focus:border-slate-300">
                 <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
@@ -99,7 +82,7 @@
         </div>
     </header>
 
-    <main class="min-h-screen pb-20">
+    <main class="min-h-screen pb-20 bg-gradient-to-b from-slate-50 via-white to-slate-50">
 
         {{-- Hero Carousel --}}
         @if(count($banners) > 0)
@@ -157,10 +140,10 @@
                         Explore nossa seleção exclusiva de produtos que combinam qualidade premium e design inconfundível.
                     </p>
                     <div class="pt-4 flex flex-col sm:flex-row gap-4 justify-center">
-                        <a href="#produtos" class="px-8 py-4 bg-white text-slate-900 font-bold rounded-full hover:bg-slate-100 transition-all shadow-[0_0_40px_rgba(255,255,255,0.2)] hover:shadow-[0_0_60px_rgba(255,255,255,0.4)] hover:-translate-y-1">
+                        <a href="#produtos" class="px-8 py-4 bg-primary text-white font-bold rounded-full hover:bg-primary transition-all shadow-[0_10px_50px_rgba(0,0,0,0.35)] hover:shadow-[0_16px_60px_rgba(0,0,0,0.45)] hover:-translate-y-1 active:scale-[0.98]">
                             Ver Produtos
                         </a>
-                        <a href="#" class="px-8 py-4 bg-transparent border border-white/30 text-white font-bold rounded-full hover:bg-white/10 transition-all hover:-translate-y-1 backdrop-blur-sm">
+                        <a href="#" class="px-8 py-4 bg-white/10 border border-white/30 text-white font-bold rounded-full hover:bg-white/20 transition-all hover:-translate-y-1 active:scale-[0.98] backdrop-blur-sm">
                             Sobre a Marca
                         </a>
                     </div>
@@ -169,34 +152,36 @@
         @endif
 
         {{-- Features Strip --}}
-        <section class="border-b border-slate-100 bg-white">
-            <div class="max-w-7xl mx-auto px-4 py-8">
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
-                    <div class="flex items-center gap-4 justify-center md:justify-start group">
-                        <div class="h-12 w-12 rounded-full bg-slate-50 flex items-center justify-center text-slate-600 group-hover:bg-primary group-hover:text-white transition-colors duration-500">
-                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
+        <section class="relative -mt-12 md:-mt-16 z-10">
+            <div class="max-w-7xl mx-auto px-4">
+                <div class="bg-white/90 backdrop-blur-xl rounded-3xl border border-slate-200 shadow-2xl shadow-slate-900/10">
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 px-6 py-6 md:px-10 md:py-8">
+                        <div class="flex items-center gap-4 justify-center md:justify-start group">
+                            <div class="h-12 w-12 rounded-2xl bg-slate-50 flex items-center justify-center text-slate-600 group-hover:bg-primary group-hover:text-white transition-all duration-300 shadow-sm group-hover:shadow-lg">
+                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
+                            </div>
+                            <div>
+                                <h3 class="font-bold text-slate-900">Produtos Premium</h3>
+                                <p class="text-sm text-slate-500">Qualidade garantida em cada detalhe</p>
+                            </div>
                         </div>
-                        <div>
-                            <h3 class="font-bold text-slate-900">Produtos Premium</h3>
-                            <p class="text-sm text-slate-500">Qualidade garantida em cada detalhe</p>
+                        <div class="flex items-center gap-4 justify-center md:justify-start group">
+                            <div class="h-12 w-12 rounded-2xl bg-slate-50 flex items-center justify-center text-slate-600 group-hover:bg-primary group-hover:text-white transition-all duration-300 shadow-sm group-hover:shadow-lg">
+                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                            </div>
+                            <div>
+                                <h3 class="font-bold text-slate-900">Entrega Rápida</h3>
+                                <p class="text-sm text-slate-500">Receba seu pedido em tempo recorde</p>
+                            </div>
                         </div>
-                    </div>
-                    <div class="flex items-center gap-4 justify-center md:justify-start group">
-                        <div class="h-12 w-12 rounded-full bg-slate-50 flex items-center justify-center text-slate-600 group-hover:bg-primary group-hover:text-white transition-colors duration-500">
-                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                        </div>
-                        <div>
-                            <h3 class="font-bold text-slate-900">Entrega Rápida</h3>
-                            <p class="text-sm text-slate-500">Receba seu pedido em tempo recorde</p>
-                        </div>
-                    </div>
-                     <div class="flex items-center gap-4 justify-center md:justify-start group">
-                        <div class="h-12 w-12 rounded-full bg-slate-50 flex items-center justify-center text-slate-600 group-hover:bg-primary group-hover:text-white transition-colors duration-500">
-                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                        </div>
-                        <div>
-                            <h3 class="font-bold text-slate-900">Compra Segura</h3>
-                            <p class="text-sm text-slate-500">Seus dados protegidos de ponta a ponta</p>
+                        <div class="flex items-center gap-4 justify-center md:justify-start group">
+                            <div class="h-12 w-12 rounded-2xl bg-slate-50 flex items-center justify-center text-slate-600 group-hover:bg-primary group-hover:text-white transition-all duration-300 shadow-sm group-hover:shadow-lg">
+                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                            </div>
+                            <div>
+                                <h3 class="font-bold text-slate-900">Compra Segura</h3>
+                                <p class="text-sm text-slate-500">Seus dados protegidos de ponta a ponta</p>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -204,9 +189,10 @@
         </section>
 
         {{-- About / Bio Section (Always Shown) --}}
-        <section class="py-20 bg-slate-50 border-b border-slate-200">
-            <div class="max-w-3xl mx-auto px-4 text-center space-y-8">
-                 <div class="inline-flex items-center justify-center p-3 bg-white rounded-2xl shadow-sm mb-4 transform rotate-3 hover:rotate-0 transition-transform duration-500">
+        <section class="py-16 md:py-20">
+            <div class="max-w-5xl mx-auto px-4">
+                <div class="bg-white rounded-3xl border border-slate-200 shadow-xl shadow-slate-900/5 p-8 md:p-12 text-center space-y-8">
+                 <div class="inline-flex items-center justify-center p-3 bg-slate-50 rounded-2xl shadow-sm mb-2 transform rotate-2 hover:rotate-0 transition-transform duration-300">
                      @if($storeSettings->logo_url)
                         <img src="{{ $storeSettings->logo_url }}" class="h-16 w-auto object-contain md:h-20">
                     @else
@@ -222,14 +208,15 @@
                      </div>
                  </div>
                  
-                 <div class="pt-4">
+                 <div class="pt-2">
                      <img src="https://upload.wikimedia.org/wikipedia/commons/c/ca/Sigran_signature.png" class="h-12 w-auto mx-auto opacity-20" alt="Assinatura">
                  </div>
+                </div>
             </div>
         </section>
 
         {{-- Categories --}}
-        <section class="py-16 bg-white">
+        <section class="py-14 md:py-16">
             <div class="max-w-7xl mx-auto px-4">
                 <div class="flex items-center justify-between mb-10">
                     <h2 class="text-2xl font-bold text-slate-900 border-l-4 border-primary pl-4">Nossas Categorias</h2>
@@ -242,18 +229,23 @@
                 <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-6">
                     @foreach ($categories->take(6) as $cat)
                         <a href="{{ route('storefront.index', ['tenant' => $tenantSlug, 'category' => $cat->name]) }}"
-                            class="group flex flex-col items-center gap-4 text-center">
-                            <div class="h-32 w-32 rounded-full overflow-hidden relative shadow-lg group-hover:shadow-xl transition-all duration-300 ring-4 ring-slate-50 group-hover:ring-primary/20">
-                                @if($cat->image_url)
-                                    <img src="{{ $cat->image_url }}" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700">
-                                @else
-                                    <div class="w-full h-full bg-slate-100 flex items-center justify-center group-hover:bg-slate-200 transition-colors">
-                                        <svg class="w-10 h-10 text-slate-300 group-hover:text-primary transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"/></svg>
+                            class="group flex flex-col items-center gap-3 text-center">
+                            <div class="w-full max-w-[9.5rem]">
+                                <div class="relative overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm group-hover:shadow-xl transition-all duration-300 group-hover:-translate-y-1">
+                                    <div class="absolute inset-0 bg-gradient-to-b from-black/0 via-black/0 to-black/10 pointer-events-none"></div>
+                                    <div class="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" style="background: radial-gradient(600px circle at 50% 30%, color-mix(in srgb, var(--primary-color) 22%, transparent), transparent 55%);"></div>
+                                    <div class="aspect-square bg-slate-50">
+                                        @if($cat->image_url)
+                                            <img src="{{ $cat->image_url }}" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700">
+                                        @else
+                                            <div class="w-full h-full flex items-center justify-center text-slate-300 group-hover:text-primary transition-colors">
+                                                <svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"/></svg>
+                                            </div>
+                                        @endif
                                     </div>
-                                @endif
-                                <div class="absolute inset-0 bg-black/5 group-hover:bg-transparent transition-colors pointer-events-none"></div>
+                                </div>
                             </div>
-                            <span class="font-bold text-slate-700 group-hover:text-primary transition-colors">{{ $cat->name }}</span>
+                            <span class="font-bold text-slate-800 group-hover:text-primary transition-colors">{{ $cat->name }}</span>
                         </a>
                     @endforeach
                 </div>
@@ -261,7 +253,7 @@
         </section>
 
         {{-- Products --}}
-        <section id="produtos" class="py-20 bg-slate-50">
+        <section id="produtos" class="py-16 md:py-20">
             <div class="max-w-7xl mx-auto px-4">
                 <div class="text-center max-w-2xl mx-auto mb-16">
                     <h2 class="text-3xl md:text-4xl font-bold text-slate-900 mb-4">Lançamentos da Semana</h2>
@@ -269,14 +261,14 @@
                 </div>
                 
                 {{-- Filter Tabs --}}
-                <div class="flex justify-center mb-12 flex-wrap gap-2">
+                <div class="flex justify-center mb-10 flex-wrap gap-2">
                      <a href="{{ route('storefront.index', ['tenant' => $tenantSlug]) }}" 
-                       class="px-5 py-2.5 rounded-full text-sm font-bold transition-all {{ !request('category') ? 'bg-slate-900 text-white shadow-lg shadow-slate-900/20' : 'bg-white text-slate-600 hover:bg-slate-100' }}">
+                       class="px-5 py-2.5 rounded-full text-sm font-bold transition-all border {{ !request('category') ? 'bg-primary text-white shadow-lg border-primary' : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50 hover:border-slate-300' }}">
                        Todos
                     </a>
                     @foreach($categories->take(5) as $cat)
                          <a href="{{ route('storefront.index', ['tenant' => $tenantSlug, 'category' => $cat->name]) }}" 
-                           class="px-5 py-2.5 rounded-full text-sm font-bold transition-all {{ request('category') == $cat->name ? 'bg-slate-900 text-white shadow-lg shadow-slate-900/20' : 'bg-white text-slate-600 hover:bg-slate-100' }}">
+                           class="px-5 py-2.5 rounded-full text-sm font-bold transition-all border {{ request('category') == $cat->name ? 'bg-primary text-white shadow-lg border-primary' : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50 hover:border-slate-300' }}">
                            {{ $cat->name }}
                         </a>
                     @endforeach
@@ -289,17 +281,17 @@
                         </div>
                         <h3 class="text-xl font-bold text-slate-900 mb-2">Ops, nenhum produto aqui!</h3>
                         <p class="text-slate-500">Tente mudar os filtros ou volte mais tarde.</p>
-                        <a href="{{ route('storefront.index', ['tenant' => $tenantSlug]) }}" class="mt-6 inline-block px-6 py-2 bg-slate-900 text-white rounded-lg hover:bg-slate-800 transition-colors">Limpar Filtros</a>
+                    <a href="{{ route('storefront.index', ['tenant' => $tenantSlug]) }}" class="mt-6 inline-block px-6 py-2 bg-primary text-white rounded-lg hover:bg-primary transition-colors">Limpar Filtros</a>
                     </div>
                 @else
-                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-y-12 gap-x-8">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-y-10 gap-x-6">
                         @foreach ($products as $product)
                             @include('storefront.partials.product-card', ['product' => $product])
                         @endforeach
                     </div>
                     
                     <div class="mt-16 text-center">
-                        <button class="px-8 py-3 bg-white border border-slate-200 text-slate-900 font-bold rounded-full hover:bg-slate-50 transition-all shadow-sm">
+                        <button class="px-8 py-3 bg-white border border-slate-200 text-slate-900 font-bold rounded-full hover:bg-slate-50 transition-all shadow-sm hover:shadow-md active:scale-[0.98]">
                             Carregar Mais Produtos
                         </button>
                     </div>
@@ -308,7 +300,7 @@
         </section>
 
         {{-- Newsletter --}}
-        <section class="py-24 bg-slate-900 text-white relative overflow-hidden">
+        <section class="py-20 md:py-24 bg-primary-strong text-white relative overflow-hidden">
             {{-- Decoration --}}
             <div class="absolute top-0 right-0 p-12 opacity-10">
                 <svg width="404" height="404" fill="none" viewBox="0 0 404 404" aria-hidden="true"><defs><pattern id="85737c0e-0916-41d7-917f-596dc7edfa27" x="0" y="0" width="20" height="20" patternUnits="userSpaceOnUse"><rect x="0" y="0" width="4" height="4" fill="currentColor"></rect></pattern></defs><rect width="404" height="404" fill="url(#85737c0e-0916-41d7-917f-596dc7edfa27)"></rect></svg>
@@ -325,8 +317,8 @@
                 
                 <form class="flex flex-col sm:flex-row gap-4 max-w-lg mx-auto">
                     <input type="email" placeholder="Digite seu melhor e-mail"
-                        class="flex-1 bg-white/10 border border-white/20 rounded-full px-6 py-4 text-white placeholder:text-slate-500 focus:outline-none focus:bg-white/20 focus:border-white/50 transition-all backdrop-blur-sm">
-                    <button class="px-8 py-4 bg-white text-slate-900 font-bold rounded-full hover:bg-blue-50 transition-all shadow-lg hover:shadow-xl hover:scale-105">
+                        class="flex-1 bg-white/10 border border-white/20 rounded-full px-6 py-4 text-white placeholder:text-slate-400 focus:outline-none focus:bg-white/15 focus:border-white/40 transition-all backdrop-blur-sm">
+                    <button class="px-8 py-4 bg-white text-slate-900 font-bold rounded-full hover:bg-primary-soft transition-all shadow-lg hover:shadow-xl hover:scale-[1.02] active:scale-[0.99]">
                         Quero Participar
                     </button>
                 </form>

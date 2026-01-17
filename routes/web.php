@@ -48,7 +48,7 @@ $tenantRoutes = function () {
         Route::post('/login', [TenantAdminAuthController::class, 'store'])->middleware('guest')->name('login.store');
         Route::post('/logout', [TenantAdminAuthController::class, 'destroy'])->middleware('auth')->name('logout');
 
-            Route::middleware('auth')->group(function () {
+        Route::middleware('auth')->group(function () {
             Route::get('/settings', [TenantAdminSettingsController::class, 'edit'])->name('settings.edit');
             Route::put('/settings', [TenantAdminSettingsController::class, 'update'])->name('settings.update');
 
@@ -57,11 +57,10 @@ $tenantRoutes = function () {
             Route::post('/products', [TenantAdminProductController::class, 'store'])->name('products.store');
             Route::get('/products/{product}/edit', [TenantAdminProductController::class, 'edit'])->name('products.edit');
             Route::put('/products/{product}', [TenantAdminProductController::class, 'update'])->name('products.update');
+            Route::post('/products/{product}/duplicate', [TenantAdminProductController::class, 'duplicate'])->name('products.duplicate');
             Route::delete('/products/{product}', [TenantAdminProductController::class, 'destroy'])->name('products.destroy');
 
-            Route::patch('/categories/{category}/toggle', [TenantAdminCategoryController::class, 'toggle'])->name('categories.toggle');
-                Route::resource('categories', TenantAdminCategoryController::class);
-                Route::post('/products/{product}/duplicate', [TenantAdminProductController::class, 'duplicate'])->name('products.duplicate');
+            Route::resource('categories', TenantAdminCategoryController::class);
         });
     });
 };
@@ -203,11 +202,10 @@ if ($baseDomain) {
             Route::post('/products', [TenantAdminProductController::class, 'store'])->name('products.store');
             Route::get('/products/{product}/edit', [TenantAdminProductController::class, 'edit'])->name('products.edit');
             Route::put('/products/{product}', [TenantAdminProductController::class, 'update'])->name('products.update');
+            Route::post('/products/{product}/duplicate', [TenantAdminProductController::class, 'duplicate'])->name('products.duplicate');
             Route::delete('/products/{product}', [TenantAdminProductController::class, 'destroy'])->name('products.destroy');
 
-            Route::patch('/categories/{category}/toggle', [TenantAdminCategoryController::class, 'toggle'])->name('categories.toggle');
             Route::resource('categories', TenantAdminCategoryController::class);
-            Route::post('/products/{product}/duplicate', [TenantAdminProductController::class, 'duplicate'])->name('products.duplicate');
         });
     });
 

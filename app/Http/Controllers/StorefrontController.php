@@ -17,7 +17,12 @@ class StorefrontController extends Controller
         $driver = DB::connection()->getDriverName();
         $likeOperator = $driver === 'pgsql' ? 'ilike' : 'like';
 
-        $query = Product::query()->with(['category', 'images'])->where('is_active', true);
+        $with = ['category'];
+        if (Product::productImagesTableExists()) {
+            $with[] = 'images';
+        }
+
+        $query = Product::query()->with($with)->where('is_active', true);
 
         $search = trim((string) $request->query('q', ''));
         if ($search !== '') {
@@ -56,7 +61,7 @@ class StorefrontController extends Controller
         $products = $query->limit(60)->get();
 
         $featured = Product::query()
-            ->with(['category', 'images'])
+            ->with($with)
             ->where('is_featured', true)
             ->where('is_active', true)
             ->orderBy('id', 'desc')
@@ -64,7 +69,7 @@ class StorefrontController extends Controller
             ->get();
 
         $promos = Product::query()
-            ->with(['category', 'images'])
+            ->with($with)
             ->whereNotNull('promo_price_cents')
             ->where('is_active', true)
             ->orderByRaw($driver === 'pgsql'
@@ -101,14 +106,21 @@ class StorefrontController extends Controller
     public function show(Product $product): View
     {
         $storeSettings = StoreSettings::current();
-        
-        $product->load(['category', 'images']);
-        if (!$product->is_active) {
-             abort(404);
+
+        $relations = ['category'];
+        if (Product::productImagesTableExists()) {
+            $relations[] = 'images';
+        } else {
+            $product->setRelation('images', collect());
+        }
+
+        $product->load($relations);
+        if (! $product->is_active) {
+            abort(404);
         }
 
         $related = Product::query()
-            ->with(['category', 'images'])
+            ->with($relations)
             ->where('category_id', $product->category_id)
             ->where('id', '!=', $product->id)
             ->where('is_active', true)
@@ -117,7 +129,9 @@ class StorefrontController extends Controller
 
         $categories = Category::query()
             ->where('is_active', true)
-            ->whereHas('products', function($q){ $q->where('is_active', true); })
+            ->whereHas('products', function ($q) {
+                $q->where('is_active', true);
+            })
             ->orderBy('name')
             ->get();
 

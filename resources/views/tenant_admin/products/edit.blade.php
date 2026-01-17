@@ -82,7 +82,7 @@
             </div>
         </div>
 
-        <form method="POST" action="{{ route('tenant_admin.products.update', $product) }}" enctype="multipart/form-data" @submit="return validateForm()">
+        <form method="POST" action="{{ route('tenant_admin.products.update', ['product' => $product->id, 'tenant' => $tenantSlug]) }}" enctype="multipart/form-data" @submit="return validateForm()">
             @csrf
             @method('PUT')
             <input type="hidden" name="tenant" value="{{ $tenantSlug }}" />

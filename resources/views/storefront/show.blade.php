@@ -1,5 +1,7 @@
-<x-layouts.app :title="$product->name" :subtitle="$product->category->name ?? 'Loja'" :show-header="false" :full-width="true">
+<x-layouts.app :title="$product->name" :subtitle="$product->category?->name ?? 'Loja'" :show-header="false" :full-width="true">
     @php($tenantSlug = app(\App\Models\Tenant::class)->slug)
+    @php($ratingAvg = (float) ($product->rating_avg ?? 0))
+    @php($ratingCount = (int) ($product->rating_count ?? 0))
     @php($final = $product->promo_price_cents ?? $product->price_cents)
     @php($from = $product->compare_at_price_cents ?? $product->price_cents)
     @php($discount = $from > 0 ? max(0, (int) round((1 - $final / $from) * 100)) : 0)
@@ -25,7 +27,7 @@
             <div class="hidden md:flex items-center gap-6 text-sm font-medium text-slate-600">
                 @foreach ($categories->take(5) as $cat)
                     <a href="{{ route('storefront.index', ['tenant' => $tenantSlug, 'category' => $cat->name]) }}"
-                        class="hover:text-emerald-600">{{ $cat->name }}</a>
+                        class="hover:text-primary">{{ $cat->name }}</a>
                 @endforeach
             </div>
 
@@ -41,7 +43,7 @@
                 </a>
                 <a href="#" class="p-2 text-slate-400 hover:text-slate-600 relative">
                     <span
-                        class="absolute top-1 right-0 h-4 w-4 bg-emerald-500 text-white text-[10px] font-bold flex items-center justify-center rounded-full ring-2 ring-white">1</span>
+                        class="absolute top-1 right-0 h-4 w-4 bg-primary text-white text-[10px] font-bold flex items-center justify-center rounded-full ring-2 ring-white">1</span>
                     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
                         fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
                         stroke-linejoin="round">
@@ -59,11 +61,11 @@
             {{-- Breadcrumb --}}
             <nav class="flex mb-8 text-sm text-slate-500">
                 <a href="{{ route('storefront.index', ['tenant' => $tenantSlug]) }}"
-                    class="hover:text-emerald-600">Início</a>
+                    class="hover:text-primary">Início</a>
                 <span class="mx-2">/</span>
                 @if ($product->category)
                     <a href="{{ route('storefront.index', ['tenant' => $tenantSlug, 'category' => $product->category->name]) }}"
-                        class="hover:text-emerald-600">{{ $product->category->name }}</a>
+                        class="hover:text-primary">{{ $product->category->name }}</a>
                     <span class="mx-2">/</span>
                 @endif
                 <span class="text-slate-900 font-medium">{{ $product->name }}</span>
@@ -78,7 +80,7 @@
                             class="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-500">
                         @if ($discount > 0)
                             <span
-                                class="absolute top-4 left-4 bg-emerald-500 text-white text-sm font-bold px-3 py-1.5 rounded-full">
+                                class="absolute top-4 left-4 bg-primary text-white text-sm font-bold px-3 py-1.5 rounded-full">
                                 -{{ $discount }}% OFF
                             </span>
                         @endif
@@ -87,7 +89,7 @@
                         @if ($gallery->isEmpty())
                             @for ($i = 0; $i < 4; $i++)
                                 <div
-                                    class="aspect-square bg-slate-50 rounded-xl overflow-hidden cursor-pointer border-2 {{ $i === 0 ? 'border-emerald-500' : 'border-transparent hover:border-slate-200' }}">
+                                    class="aspect-square bg-slate-50 rounded-xl overflow-hidden cursor-pointer border-2 {{ $i === 0 ? 'border-primary' : 'border-transparent hover:border-slate-200' }}">
                                     <img src="{{ $product->primary_image_url ?? 'https://picsum.photos/seed/' . urlencode((string) $product->id) . '/200/200' }}"
                                         class="w-full h-full object-cover">
                                 </div>
@@ -109,18 +111,18 @@
                     <div class="flex items-center gap-4 mb-6">
                         <div class="flex items-center text-amber-400">
                             @for ($i = 1; $i <= 5; $i++)
-                                <svg class="w-5 h-5 {{ $product->rating_avg >= $i ? 'fill-current' : 'text-slate-200 fill-current' }}"
+                                <svg class="w-5 h-5 {{ $ratingAvg >= $i ? 'fill-current' : 'text-slate-200 fill-current' }}"
                                     viewBox="0 0 20 20">
                                     <path
                                         d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.286 3.955a1 1 0 00.95.69h4.158c.969 0 1.371 1.24.588 1.81l-3.363 2.444a1 1 0 00-.364 1.118l1.286 3.955c.3.921-.755 1.688-1.538 1.118l-3.363-2.444a1 1 0 00-1.176 0l-3.363 2.444c-.783.57-1.838-.197-1.538-1.118l1.286-3.955a1 1 0 00-.364-1.118L2.08 9.382c-.783-.57-.38-1.81.588-1.81h4.158a1 1 0 00.95-.69l1.286-3.955z" />
                                 </svg>
                             @endfor
                             <span
-                                class="ml-2 text-sm text-slate-500 font-medium">{{ number_format($product->rating_avg, 1) }}
-                                ({{ $product->rating_count }} avaliações)</span>
+                                class="ml-2 text-sm text-slate-500 font-medium">{{ number_format($ratingAvg, 1) }}
+                                ({{ $ratingCount }} avaliações)</span>
                         </div>
                         <span class="w-1 h-1 bg-slate-300 rounded-full"></span>
-                        <span class="text-sm text-emerald-600 font-medium">Disponível em estoque</span>
+                        <span class="text-sm text-primary font-medium">Disponível em estoque</span>
                     </div>
 
                     <div class="flex items-baseline gap-4 mb-8">
@@ -154,12 +156,11 @@
                                 </a>
                             @else
                                 <button
-                                    class="w-full bg-slate-900 hover:bg-slate-800 text-white text-lg font-bold py-4 rounded-full shadow-lg transition-all active:scale-[0.98]"
-                                    style="background-color: var(--primary-color)">
+                                    class="w-full bg-primary hover:bg-primary text-white text-lg font-bold py-4 rounded-full shadow-lg transition-all active:scale-[0.98]"
                                     Adicionar ao Carrinho
                                 </button>
                                 <button
-                                    class="w-full bg-slate-100 hover:bg-slate-200 text-slate-900 font-bold py-4 rounded-full transition-colors">
+                                    class="w-full bg-white border border-primary text-primary hover:bg-primary hover:text-white font-bold py-4 rounded-full transition-colors">
                                     Comprar Agora
                                 </button>
                             @endif

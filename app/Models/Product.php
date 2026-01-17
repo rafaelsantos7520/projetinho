@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Facades\Schema;
 
 class Product extends Model
 {
@@ -37,7 +38,16 @@ class Product extends Model
 
     public function images(): HasMany
     {
-        return $this->hasMany(ProductImage::class)->orderBy('sort_order')->orderBy('id');
+        $relation = $this->hasMany(ProductImage::class);
+
+        if (static::productImagesTableExists()) {
+            if (static::productImagesSortOrderColumnExists()) {
+                $relation->orderBy('sort_order');
+            }
+            $relation->orderBy('id');
+        }
+
+        return $relation;
     }
 
     public function options(): HasMany
@@ -47,15 +57,45 @@ class Product extends Model
 
     public function getPrimaryImageUrlAttribute(): ?string
     {
-        $image = $this->relationLoaded('images')
-            ? $this->images->first()
-            : $this->images()->first();
-
-        if ($image instanceof ProductImage) {
-            return $image->image_url;
+        if (! static::productImagesTableExists()) {
+            return $this->image_url;
         }
 
-        return $this->image_url;
+        try {
+            $image = $this->relationLoaded('images')
+                ? $this->images->first()
+                : $this->images()->first();
+
+            if ($image instanceof ProductImage) {
+                return $image->image_url;
+            }
+
+            return $this->image_url;
+        } catch (\Throwable) {
+            return $this->image_url;
+        }
+    }
+
+    public static function productImagesTableExists(): bool
+    {
+        try {
+            return Schema::hasTable('product_images');
+        } catch (\Throwable) {
+            return false;
+        }
+    }
+
+    public static function productImagesSortOrderColumnExists(): bool
+    {
+        if (! static::productImagesTableExists()) {
+            return false;
+        }
+
+        try {
+            return Schema::hasColumn('product_images', 'sort_order');
+        } catch (\Throwable) {
+            return false;
+        }
     }
 
     /**

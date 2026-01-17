@@ -4,10 +4,11 @@
 @php($rating = (float) ($product->rating_avg ?? 0))
 @php($count = (int) ($product->rating_count ?? 0))
 
-<div class="group rounded-3xl border border-slate-200 bg-white overflow-hidden hover:shadow-xl transition-shadow duration-300">
+<div class="group rounded-3xl border border-slate-200 bg-white overflow-hidden hover:shadow-2xl hover:shadow-slate-900/10 transition-all duration-300 hover:-translate-y-1">
     <a href="{{ route('storefront.product', ['tenant' => app(\App\Models\Tenant::class)->slug, 'product' => $product->id]) }}" class="block relative aspect-square bg-slate-100 overflow-hidden">
         <img
             src="{{ $product->primary_image_url ?? ('https://picsum.photos/seed/'.urlencode((string) $product->id).'/500/500') }}"
+            onerror="this.onerror=null;this.src='https://picsum.photos/seed/{{ urlencode((string) $product->id) }}/500/500'"
             alt="Imagem do produto {{ $product->name }}"
             loading="lazy"
             decoding="async"
@@ -52,7 +53,7 @@
                     @endif
                 </div>
             </div>
-            <a href="{{ route('storefront.product', ['tenant' => app(\App\Models\Tenant::class)->slug, 'product' => $product->id]) }}" class="h-10 w-10 rounded-full bg-slate-100 text-slate-900 flex items-center justify-center hover:text-white transition-colors" style="--hover-bg: var(--primary-color)" onmouseover="this.style.backgroundColor=getComputedStyle(document.documentElement).getPropertyValue('--primary-color')" onmouseout="this.style.backgroundColor=''" aria-label="Ver produto">
+            <a href="{{ route('storefront.product', ['tenant' => app(\App\Models\Tenant::class)->slug, 'product' => $product->id]) }}" class="h-10 w-10 rounded-full bg-slate-100 text-slate-900 flex items-center justify-center hover:bg-primary hover:text-white transition-colors shadow-sm group-hover:shadow-md" aria-label="Ver produto">
                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
             </a>
         </div>

@@ -84,7 +84,7 @@
                 </a>
                 @if ($isPlatformArea || !$hasTenant)
                     <a href="{{ route('onboarding.create') }}"
-                        class="text-sm px-4 py-2 rounded-2xl bg-slate-900 text-white hover:bg-slate-800">
+                        class="text-sm px-4 py-2 rounded-2xl bg-primary text-white hover:bg-primary">
                         Criar loja
                     </a>
                 @endif

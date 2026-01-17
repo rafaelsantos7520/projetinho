@@ -8,8 +8,8 @@ use App\Models\Product;
 use App\Models\ProductImage;
 use App\Models\Tenant;
 use Illuminate\Http\RedirectResponse;
-use Illuminate\Http\UploadedFile;
 use Illuminate\Http\Request;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
@@ -91,19 +91,22 @@ class ProductController extends Controller
 
         $product = Product::query()->create($validated);
 
-        // Salvar imagens
         if (count($images) > 0) {
             $urls = $this->storeProductImages($request, $images);
-
-            foreach ($urls as $i => $url) {
-                ProductImage::query()->create([
-                    'product_id' => $product->id,
-                    'image_url' => $url,
-                    'sort_order' => $i,
-                ]);
+            $firstUrl = $urls[0] ?? null;
+            if (is_string($firstUrl) && $firstUrl !== '') {
+                $product->update(['image_url' => $firstUrl]);
             }
 
-            $product->update(['image_url' => $urls[0] ?? $product->image_url]);
+            if (Product::productImagesTableExists()) {
+                foreach ($urls as $i => $url) {
+                    ProductImage::query()->create([
+                        'product_id' => $product->id,
+                        'image_url' => $url,
+                        'sort_order' => $i,
+                    ]);
+                }
+            }
         }
 
         $tenant = app()->bound(Tenant::class) ? app(Tenant::class) : null;
@@ -115,7 +118,11 @@ class ProductController extends Controller
 
     public function edit(Product $product): View
     {
-        $product->load('images');
+        if (Product::productImagesTableExists()) {
+            $product->load('images');
+        } else {
+            $product->setRelation('images', collect());
+        }
         $categories = Category::query()->orderBy('name')->get();
 
         return view('tenant_admin.products.edit', [
@@ -189,80 +196,99 @@ class ProductController extends Controller
 
         unset($validated['replace_images'], $validated['add_images'], $validated['remove_images'], $validated['primary_image_id']);
 
-        if (count($removeIds) > 0) {
-            $toRemove = $product->images()->whereIn('id', $removeIds)->get();
-            foreach ($toRemove as $img) {
-                $this->deleteLocalImageIfApplicable($img->image_url);
-                $img->delete();
+        if (Product::productImagesTableExists()) {
+            if (count($removeIds) > 0) {
+                $toRemove = $product->images()->whereIn('id', $removeIds)->get();
+                foreach ($toRemove as $img) {
+                    $this->deleteLocalImageIfApplicable($img->image_url);
+                    $img->delete();
+                }
             }
-        }
 
-        if (count($replace) > 0) {
-            $existing = $product->images()->whereIn('id', array_map('intval', array_keys($replace)))->get()->keyBy('id');
+            if (count($replace) > 0) {
+                $existing = $product->images()->whereIn('id', array_map('intval', array_keys($replace)))->get()->keyBy('id');
 
-            foreach ($replace as $id => $file) {
-                $id = (int) $id;
-                $img = $existing->get($id);
-                if (! $img) {
+                foreach ($replace as $id => $file) {
+                    $id = (int) $id;
+                    $img = $existing->get($id);
+                    if (! $img) {
+                        throw ValidationException::withMessages([
+                            'replace_images' => ['Imagem para substituir inválida.'],
+                        ]);
+                    }
+
+                    $urls = $this->storeProductImages($request, [$file]);
+                    $newUrl = $urls[0] ?? null;
+                    if (is_string($newUrl) && $newUrl !== '') {
+                        $this->deleteLocalImageIfApplicable($img->image_url);
+                        $img->update(['image_url' => $newUrl]);
+                    }
+                }
+            }
+
+            if ($primaryImageId !== null) {
+                $exists = $product->images()->where('id', $primaryImageId)->exists();
+                if (! $exists) {
                     throw ValidationException::withMessages([
-                        'replace_images' => ['Imagem para substituir inválida.'],
+                        'primary_image_id' => ['Imagem principal inválida.'],
+                    ]);
+                }
+            }
+
+            if (count($add) > 0) {
+                $existingCount = (int) $product->images()->count();
+                if ($existingCount + count($add) > 3) {
+                    throw ValidationException::withMessages([
+                        'add_images' => ['Máximo 3 imagens por produto. Remova alguma antes de enviar novas.'],
                     ]);
                 }
 
-                $urls = $this->storeProductImages($request, [$file]);
-                $newUrl = $urls[0] ?? null;
-                if (is_string($newUrl) && $newUrl !== '') {
-                    $this->deleteLocalImageIfApplicable($img->image_url);
-                    $img->update(['image_url' => $newUrl]);
+                $urls = $this->storeProductImages($request, $add);
+                $start = (int) $product->images()->max('sort_order');
+                $start = $start < 0 ? 0 : $start + 1;
+
+                foreach ($urls as $i => $url) {
+                    ProductImage::query()->create([
+                        'product_id' => $product->id,
+                        'image_url' => $url,
+                        'sort_order' => $start + $i,
+                    ]);
                 }
             }
-        }
 
-        if ($primaryImageId !== null) {
-            $exists = $product->images()->where('id', $primaryImageId)->exists();
-            if (! $exists) {
-                throw ValidationException::withMessages([
-                    'primary_image_id' => ['Imagem principal inválida.'],
-                ]);
+            if ($primaryImageId !== null) {
+                $ids = $product->images()->orderBy('sort_order')->orderBy('id')->pluck('id')->all();
+                $ids = array_values(array_filter($ids, fn ($id) => (int) $id !== $primaryImageId));
+                array_unshift($ids, $primaryImageId);
+
+                foreach ($ids as $index => $id) {
+                    ProductImage::query()->where('id', $id)->update(['sort_order' => $index]);
+                }
             }
-        }
-
-        if (count($add) > 0) {
-            $existingCount = (int) $product->images()->count();
-            if ($existingCount + count($add) > 3) {
-                throw ValidationException::withMessages([
-                    'add_images' => ['Máximo 3 imagens por produto. Remova alguma antes de enviar novas.'],
-                ]);
+        } else {
+            $uploaded = [];
+            if (count($replace) > 0) {
+                $uploaded = array_values($replace);
+            } elseif (count($add) > 0) {
+                $uploaded = $add;
             }
 
-            $urls = $this->storeProductImages($request, $add);
-            $start = (int) $product->images()->max('sort_order');
-            $start = $start < 0 ? 0 : $start + 1;
-
-            foreach ($urls as $i => $url) {
-                ProductImage::query()->create([
-                    'product_id' => $product->id,
-                    'image_url' => $url,
-                    'sort_order' => $start + $i,
-                ]);
-            }
-        }
-
-        if ($primaryImageId !== null) {
-            $ids = $product->images()->orderBy('sort_order')->orderBy('id')->pluck('id')->all();
-            $ids = array_values(array_filter($ids, fn ($id) => (int) $id !== $primaryImageId));
-            array_unshift($ids, $primaryImageId);
-
-            foreach ($ids as $index => $id) {
-                ProductImage::query()->where('id', $id)->update(['sort_order' => $index]);
+            if (count($uploaded) > 0) {
+                $urls = $this->storeProductImages($request, [$uploaded[0]]);
+                $firstUrl = $urls[0] ?? null;
+                if (is_string($firstUrl) && $firstUrl !== '') {
+                    $validated['image_url'] = $firstUrl;
+                }
             }
         }
 
         $product->update($validated);
 
-        $first = $product->images()->orderBy('sort_order')->orderBy('id')->value('image_url');
-        if (is_string($first) && $first !== '' && $product->image_url !== $first) {
-            $product->update(['image_url' => $first]);
+        if (Product::productImagesTableExists()) {
+            $first = $product->images()->orderBy('sort_order')->orderBy('id')->value('image_url');
+            if (is_string($first) && $first !== '' && $product->image_url !== $first) {
+                $product->update(['image_url' => $first]);
+            }
         }
 
         $tenant = app()->bound(Tenant::class) ? app(Tenant::class) : null;
@@ -278,13 +304,15 @@ class ProductController extends Controller
         $copy->name = $copy->name.' (Cópia)';
         $copy->save();
 
-        $images = $product->images()->get();
-        foreach ($images as $image) {
-            ProductImage::query()->create([
-                'product_id' => $copy->id,
-                'image_url' => $image->image_url,
-                'sort_order' => $image->sort_order,
-            ]);
+        if (Product::productImagesTableExists()) {
+            $images = $product->images()->get();
+            foreach ($images as $image) {
+                ProductImage::query()->create([
+                    'product_id' => $copy->id,
+                    'image_url' => $image->image_url,
+                    'sort_order' => $image->sort_order,
+                ]);
+            }
         }
 
         $tenant = app()->bound(Tenant::class) ? app(Tenant::class) : null;
@@ -320,10 +348,11 @@ class ProductController extends Controller
 
     public function destroy(Product $product): RedirectResponse
     {
-        foreach ($product->images()->get() as $img) {
-            $this->deleteLocalImageIfApplicable($img->image_url);
+        if (Product::productImagesTableExists()) {
+            foreach ($product->images()->get() as $img) {
+                $this->deleteLocalImageIfApplicable($img->image_url);
+            }
         }
-
         $this->deleteLocalImageIfApplicable($product->image_url);
         $product->delete();
 
@@ -392,10 +421,11 @@ class ProductController extends Controller
         $product->options()->delete();
 
         // Filtrar opções vazias
-        $options = array_filter($options, fn ($opt) => !empty($opt['name']) && !empty($opt['values']));
+        $options = array_filter($options, fn ($opt) => ! empty($opt['name']) && ! empty($opt['values']));
 
         if (empty($options)) {
             $product->update(['has_variants' => false]);
+
             return;
         }
 
@@ -431,7 +461,7 @@ class ProductController extends Controller
 
                 // Converter preço formatado para centavos
                 $priceCents = null;
-                if (!empty($priceRaw)) {
+                if (! empty($priceRaw)) {
                     // Remove pontos de milhar e troca vírgula por ponto
                     $priceClean = str_replace('.', '', $priceRaw);
                     $priceClean = str_replace(',', '.', $priceClean);
