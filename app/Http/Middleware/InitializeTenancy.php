@@ -32,6 +32,10 @@ class InitializeTenancy
             app()->instance(Tenant::class, $tenant);
             $this->isolateTenantSession($tenant->slug);
             URL::defaults(['tenant' => $tenant->slug]);
+
+            // Remove o parâmetro 'tenant' da rota para não ser injetado nos controllers
+            $request->route()->forgetParameter('tenant');
+            
             config(['auth.defaults.guard' => 'web']);
             Auth::shouldUse('web');
         } else {
