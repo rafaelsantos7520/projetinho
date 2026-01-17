@@ -56,9 +56,10 @@ class ProductController extends Controller
             'image_url' => ['nullable', 'url', 'max:2048'],
             'category_id' => ['nullable', 'exists:categories,id'],
             'is_featured' => ['nullable', 'boolean'],
+            'size' => ['nullable', 'string', 'max:20'],
+            'color' => ['nullable', 'string', 'max:50'],
             'price_cents' => ['required', 'integer', 'min:0'],
             'promo_price_cents' => ['nullable', 'integer', 'min:0'],
-            'compare_at_price_cents' => ['nullable', 'integer', 'min:0'],
             'description' => ['nullable', 'string'],
             'rating_avg' => ['nullable', 'numeric', 'min:0', 'max:5'],
             'rating_count' => ['nullable', 'integer', 'min:0'],
@@ -76,8 +77,6 @@ class ProductController extends Controller
             'price_cents.min' => 'O preço do produto não pode ser negativo.',
             'promo_price_cents.integer' => 'O preço promocional é inválido.',
             'promo_price_cents.min' => 'O preço promocional não pode ser negativo.',
-            'compare_at_price_cents.integer' => 'O preço \"de\" é inválido.',
-            'compare_at_price_cents.min' => 'O preço \"de\" não pode ser negativo.',
         ]);
 
         $validated['is_featured'] = (bool) ($validated['is_featured'] ?? false);
@@ -92,6 +91,7 @@ class ProductController extends Controller
 
         $product = Product::query()->create($validated);
 
+        // Salvar imagens
         if (count($images) > 0) {
             $urls = $this->storeProductImages($request, $images);
 
@@ -140,9 +140,10 @@ class ProductController extends Controller
             'image_url' => ['nullable', 'url', 'max:2048'],
             'category_id' => ['nullable', 'exists:categories,id'],
             'is_featured' => ['nullable', 'boolean'],
+            'size' => ['nullable', 'string', 'max:20'],
+            'color' => ['nullable', 'string', 'max:50'],
             'price_cents' => ['required', 'integer', 'min:0'],
             'promo_price_cents' => ['nullable', 'integer', 'min:0'],
-            'compare_at_price_cents' => ['nullable', 'integer', 'min:0'],
             'description' => ['nullable', 'string'],
             'rating_avg' => ['nullable', 'numeric', 'min:0', 'max:5'],
             'rating_count' => ['nullable', 'integer', 'min:0'],
@@ -166,8 +167,6 @@ class ProductController extends Controller
             'price_cents.min' => 'O preço do produto não pode ser negativo.',
             'promo_price_cents.integer' => 'O preço promocional é inválido.',
             'promo_price_cents.min' => 'O preço promocional não pode ser negativo.',
-            'compare_at_price_cents.integer' => 'O preço \"de\" é inválido.',
-            'compare_at_price_cents.min' => 'O preço \"de\" não pode ser negativo.',
         ]);
 
         $validated['is_featured'] = (bool) ($validated['is_featured'] ?? false);
@@ -269,8 +268,8 @@ class ProductController extends Controller
         $tenant = app()->bound(Tenant::class) ? app(Tenant::class) : null;
 
         return redirect()
-            ->route('tenant_admin.products.index', $tenant ? ['tenant' => $tenant->slug] : [])
-            ->with('status', 'Produto atualizado.');
+            ->route('tenant_admin.products.edit', ['product' => $product->id, 'tenant' => $tenant->slug])
+            ->with(['status' => 'Produto atualizado.', 'product_updated' => true]);
     }
 
     public function duplicate(Product $product): RedirectResponse
@@ -301,7 +300,7 @@ class ProductController extends Controller
 
     private function convertMoneyInputs(Request $request): void
     {
-        $fields = ['price', 'promo_price', 'compare_at_price'];
+        $fields = ['price', 'promo_price'];
 
         foreach ($fields as $field) {
             $formatted = $request->input($field.'_formatted');
@@ -382,5 +381,72 @@ class ProductController extends Controller
     private function productImagesDisk(): string
     {
         return (string) config('filesystems.product_images_disk', 'public');
+    }
+
+    private function saveProductOptions(Product $product, array $options): void
+    {
+        // Remover opções antigas (os valores são removidos em cascata)
+        foreach ($product->options as $option) {
+            $option->values()->delete();
+        }
+        $product->options()->delete();
+
+        // Filtrar opções vazias
+        $options = array_filter($options, fn ($opt) => !empty($opt['name']) && !empty($opt['values']));
+
+        if (empty($options)) {
+            $product->update(['has_variants' => false]);
+            return;
+        }
+
+        $sortOrder = 0;
+        foreach ($options as $optionData) {
+            $optionName = trim($optionData['name'] ?? '');
+            if (empty($optionName)) {
+                continue;
+            }
+
+            $option = $product->options()->create([
+                'name' => $optionName,
+                'sort_order' => $sortOrder++,
+            ]);
+
+            $values = $optionData['values'] ?? [];
+            $valueSortOrder = 0;
+            foreach ($values as $valueData) {
+                // Suporta dois formatos:
+                // 1. Novo formato: ['text' => 'M', 'price' => '150,00']
+                // 2. Formato antigo: 'M' (string simples)
+                if (is_array($valueData)) {
+                    $valueText = trim($valueData['text'] ?? '');
+                    $priceRaw = $valueData['price'] ?? null;
+                } else {
+                    $valueText = trim($valueData);
+                    $priceRaw = null;
+                }
+
+                if (empty($valueText)) {
+                    continue;
+                }
+
+                // Converter preço formatado para centavos
+                $priceCents = null;
+                if (!empty($priceRaw)) {
+                    // Remove pontos de milhar e troca vírgula por ponto
+                    $priceClean = str_replace('.', '', $priceRaw);
+                    $priceClean = str_replace(',', '.', $priceClean);
+                    $priceFloat = (float) $priceClean;
+                    $priceCents = (int) round($priceFloat * 100);
+                }
+
+                $option->values()->create([
+                    'value' => $valueText,
+                    'price_modifier_cents' => $priceCents,
+                    'sort_order' => $valueSortOrder++,
+                ]);
+            }
+        }
+
+        $product->update(['has_variants' => true]);
     }
 }

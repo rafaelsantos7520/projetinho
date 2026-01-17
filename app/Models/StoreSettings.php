@@ -14,6 +14,10 @@ class StoreSettings extends Model
         'whatsapp_number',
         'instagram_url',
         'facebook_url',
+        'biography',
+        'banner_1_url',
+        'banner_2_url',
+        'banner_3_url',
     ];
 
     public static function current(): self

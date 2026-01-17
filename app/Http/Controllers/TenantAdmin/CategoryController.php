@@ -88,6 +88,26 @@ class CategoryController extends Controller
             ->with('status', 'Categoria removida com sucesso!');
     }
 
+    public function toggle(Category $category)
+    {
+        // Validação: não pode desativar se tem produtos ativos
+        if ($category->is_active) {
+            $activeProductCount = $category->products()->where('is_active', true)->count();
+            
+            if ($activeProductCount > 0) {
+                return redirect()->back()
+                    ->with('error', "Não é possível desativar \"{$category->name}\" porque existem {$activeProductCount} produto(s) ativo(s) nesta categoria. Desative os produtos primeiro.");
+            }
+        }
+
+        $category->update(['is_active' => !$category->is_active]);
+
+        $status = $category->is_active ? 'ativada' : 'desativada';
+        
+        return redirect()->route('tenant_admin.categories.index', ['tenant' => app(Tenant::class)->slug])
+            ->with('status', "Categoria \"{$category->name}\" {$status} com sucesso!");
+    }
+
     private function storeCategoryImage(Request $request): string
     {
         $tenant = app()->bound(Tenant::class) ? app(Tenant::class) : null;

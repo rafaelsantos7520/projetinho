@@ -59,6 +59,7 @@ $tenantRoutes = function () {
             Route::put('/products/{product}', [TenantAdminProductController::class, 'update'])->name('products.update');
             Route::delete('/products/{product}', [TenantAdminProductController::class, 'destroy'])->name('products.destroy');
 
+            Route::patch('/categories/{category}/toggle', [TenantAdminCategoryController::class, 'toggle'])->name('categories.toggle');
                 Route::resource('categories', TenantAdminCategoryController::class);
                 Route::post('/products/{product}/duplicate', [TenantAdminProductController::class, 'duplicate'])->name('products.duplicate');
         });
@@ -204,6 +205,7 @@ if ($baseDomain) {
             Route::put('/products/{product}', [TenantAdminProductController::class, 'update'])->name('products.update');
             Route::delete('/products/{product}', [TenantAdminProductController::class, 'destroy'])->name('products.destroy');
 
+            Route::patch('/categories/{category}/toggle', [TenantAdminCategoryController::class, 'toggle'])->name('categories.toggle');
             Route::resource('categories', TenantAdminCategoryController::class);
             Route::post('/products/{product}/duplicate', [TenantAdminProductController::class, 'duplicate'])->name('products.duplicate');
         });

@@ -13,6 +13,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>{{ $title ?? config('app.name') }}</title>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
+    <!-- Alpine.js -->
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
     <style>
         :root {
             --primary-color: {{ $storeSettings->primary_color ?? '#0f172a' }};
@@ -33,7 +35,10 @@
         <div class="min-h-screen bg-slate-50">
             <x-tenant-admin.header :tenant-query="$tenantQuery" :tenant-slug="$tenantSlug" :store-settings="$storeSettings ?? null" />
             
-            <main class="mx-auto max-w-7xl px-4 pt-28 sm:pt-32 pb-10 sm:px-6 lg:px-8">
+            {{-- Spacer para compensar o header fixo --}}
+            <div class="h-20"></div>
+            
+            <main class="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
                 <x-ui.alerts />
                 {{ $slot }}
             </main>

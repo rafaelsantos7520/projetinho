@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Category;
 use App\Models\Product;
+use App\Models\StoreSettings;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
@@ -12,10 +13,11 @@ class StorefrontController extends Controller
 {
     public function index(Request $request): View
     {
+        $storeSettings = StoreSettings::current();
         $driver = DB::connection()->getDriverName();
         $likeOperator = $driver === 'pgsql' ? 'ilike' : 'like';
 
-        $query = Product::query()->with(['category', 'images']);
+        $query = Product::query()->with(['category', 'images'])->where('is_active', true);
 
         $search = trim((string) $request->query('q', ''));
         if ($search !== '') {
@@ -23,7 +25,7 @@ class StorefrontController extends Controller
                 $q->where('name', $likeOperator, '%'.$search.'%')
                     ->orWhere('description', $likeOperator, '%'.$search.'%')
                     ->orWhereHas('category', function ($q) use ($search, $likeOperator) {
-                        $q->where('name', $likeOperator, '%'.$search.'%');
+                        $q->where('name', $likeOperator, '%'.$search.'%')->where('is_active', true);
                     });
             });
         }
@@ -31,7 +33,7 @@ class StorefrontController extends Controller
         $category = trim((string) $request->query('category', ''));
         if ($category !== '') {
             $query->whereHas('category', function ($q) use ($category) {
-                $q->where('name', $category);
+                $q->where('name', $category)->where('is_active', true);
             });
         }
 
@@ -56,6 +58,7 @@ class StorefrontController extends Controller
         $featured = Product::query()
             ->with(['category', 'images'])
             ->where('is_featured', true)
+            ->where('is_active', true)
             ->orderBy('id', 'desc')
             ->limit(8)
             ->get();
@@ -63,6 +66,7 @@ class StorefrontController extends Controller
         $promos = Product::query()
             ->with(['category', 'images'])
             ->whereNotNull('promo_price_cents')
+            ->where('is_active', true)
             ->orderByRaw($driver === 'pgsql'
                 ? '(price_cents - promo_price_cents) desc nulls last'
                 : '(price_cents - promo_price_cents) desc'
@@ -71,11 +75,16 @@ class StorefrontController extends Controller
             ->get();
 
         $categories = Category::query()
-            ->whereHas('products')
+            ->where('is_active', true)
+            ->whereHas('products', function ($q) {
+                $q->where('is_active', true);
+            })
+            ->orderBy('sort_order')
             ->orderBy('name')
             ->get();
 
         return view('storefront.index', [
+            'storeSettings' => $storeSettings,
             'products' => $products,
             'featured' => $featured,
             'promos' => $promos,
@@ -91,21 +100,29 @@ class StorefrontController extends Controller
 
     public function show(Product $product): View
     {
+        $storeSettings = StoreSettings::current();
+        
         $product->load(['category', 'images']);
+        if (!$product->is_active) {
+             abort(404);
+        }
 
         $related = Product::query()
             ->with(['category', 'images'])
             ->where('category_id', $product->category_id)
             ->where('id', '!=', $product->id)
+            ->where('is_active', true)
             ->limit(4)
             ->get();
 
         $categories = Category::query()
-            ->whereHas('products')
+            ->where('is_active', true)
+            ->whereHas('products', function($q){ $q->where('is_active', true); })
             ->orderBy('name')
             ->get();
 
         return view('storefront.show', [
+            'storeSettings' => $storeSettings,
             'product' => $product,
             'related' => $related,
             'categories' => $categories,
