@@ -121,13 +121,16 @@ class CategoryController extends Controller
     {
         $tenant = app()->bound(Tenant::class) ? app(Tenant::class) : null;
         $tenantSlug = $tenant?->slug ?? 'default';
+        $diskName = config('filesystems.product_images_disk', 'public');
+        $disk = Storage::disk($diskName);
 
-        $filePath = $request->file('image')->storePublicly(
+        $filePath = $disk->putFile(
             'tenants/'.$tenantSlug.'/categories',
+            $request->file('image'),
             'public'
         );
 
-        return Storage::disk('public')->url($filePath);
+        return $disk->url($filePath);
     }
 
     private function deleteLocalImageIfApplicable(?string $imageUrl): void
@@ -141,16 +144,26 @@ class CategoryController extends Controller
             return;
         }
 
-        $prefix = '/storage/';
-        if (! str_starts_with($path, $prefix)) {
-            return;
+        // Se for URL completa do R2, tentamos extrair o path relativo
+        // Mas por segurança, se configurarmos R2, podemos tentar deletar pelo caminho relativo
+        // No entanto, parsear URL externa pode ser tricky.
+        // Vamos manter lógica simples: Se for local (/storage/), deleta.
+        // Se for R2 (não começa com /storage/), teríamos que saber o bucket url prefix.
+        
+        $diskName = config('filesystems.product_images_disk', 'public');
+        
+        if ($diskName === 'public') {
+            $prefix = '/storage/';
+            if (str_starts_with($path, $prefix)) {
+                $relative = ltrim(substr($path, strlen($prefix)), '/');
+                Storage::disk('public')->delete($relative);
+            }
+        } else {
+            // Lógica para R2/S3: Tenta remover baseado no path da URL
+            // Ex: https://pub-xxx.r2.dev/tenants/loja3/categories/img.jpg
+            // Path: /tenants/loja3/categories/img.jpg
+            $relative = ltrim($path, '/');
+            Storage::disk($diskName)->delete($relative);
         }
-
-        $relative = ltrim(substr($path, strlen($prefix)), '/');
-        if ($relative === '') {
-            return;
-        }
-
-        Storage::disk('public')->delete($relative);
     }
 }

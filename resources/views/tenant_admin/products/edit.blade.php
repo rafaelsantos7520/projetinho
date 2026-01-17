@@ -82,7 +82,7 @@
             </div>
         </div>
 
-        <form method="POST" action="{{ route('tenant_admin.products.update', ['productId' => $product->id, 'tenant' => $tenantSlug]) }}" enctype="multipart/form-data" @submit="return validateForm()">
+        <form method="POST" action="{{ route('tenant_admin.products.update', ['productId' => $product->id, 'tenant' => $tenantSlug]) }}" enctype="multipart/form-data" @submit="if(validateForm()) { submitting = true; } else { return false; }">
             @csrf
             @method('PUT')
             <input type="hidden" name="tenant" value="{{ $tenantSlug }}" />
@@ -280,10 +280,10 @@
                                     </div>
                                 </div>
                                 @if ($primary)
-                                    <input type="file" name="replace_images[{{ $primary->id }}]" accept="image/*" style="display: none;" data-file-input="edit-0" />
+                                    <input type="file" name="replace_images[{{ $primary->id }}]" accept="image/png, image/jpeg, image/jpg, image/svg+xml, image/webp" style="display: none;" data-file-input="edit-0" />
                                     <input type="hidden" name="primary_image_id" value="{{ $primary->id }}" />
                                 @else
-                                    <input type="file" name="add_images[0]" accept="image/*" style="display: none;" data-file-input="edit-0" />
+                                    <input type="file" name="add_images[0]" accept="image/png, image/jpeg, image/jpg, image/svg+xml, image/webp" style="display: none;" data-file-input="edit-0" />
                                 @endif
                             </div>
 
@@ -306,9 +306,9 @@
                                             <button type="button" data-remove="edit-{{ $slot }}" style="width: 100%; padding: 4px; background: #ef4444; color: white; border: none; border-radius: 4px; font-size: 10px; font-weight: 600; cursor: pointer;">Remover</button>
                                         </div>
                                         @if ($img)
-                                            <input type="file" name="replace_images[{{ $img->id }}]" accept="image/*" style="display: none;" data-file-input="edit-{{ $slot }}" />
+                                            <input type="file" name="replace_images[{{ $img->id }}]" accept="image/png, image/jpeg, image/jpg, image/svg+xml, image/webp" style="display: none;" data-file-input="edit-{{ $slot }}" />
                                         @else
-                                            <input type="file" name="add_images[{{ $slot }}]" accept="image/*" style="display: none;" data-file-input="edit-{{ $slot }}" />
+                                            <input type="file" name="add_images[{{ $slot }}]" accept="image/png, image/jpeg, image/jpg, image/svg+xml, image/webp" style="display: none;" data-file-input="edit-{{ $slot }}" />
                                         @endif
                                     </div>
                                 @endfor
@@ -342,8 +342,11 @@
                             <span style="font-weight: 700; color: #1e293b;">Ações</span>
                         </div>
                         <div class="product-card-body">
-                            <button type="submit" class="btn-primary" style="margin-bottom: 12px;">
-                                Salvar Alterações
+                            <button type="submit" class="btn-primary" :disabled="submitting" :style="submitting ? 'opacity: 0.7; cursor: not-allowed;' : ''" style="display: flex; justify-content: center; align-items: center; margin-bottom: 12px;">
+                                <span x-show="!submitting">Salvar Alterações</span>
+                                <span x-show="submitting" style="display: flex; align-items: center; gap: 8px;">
+                                    Salvando...
+                                </span>
                             </button>
                             <a href="#delete" class="btn-secondary btn-danger">
                                 Excluir Produto
@@ -393,6 +396,7 @@
             else if (currentSize) initialGroup = 'custom';
             
             return {
+                submitting: false,
                 selectedSize: currentSize,
                 selectedColor: '{{ old('color', $product->color ?? '') }}',
                 sizeGroup: initialGroup,
@@ -527,7 +531,7 @@
         })();
     </script>
     {{-- Success Modal --}}
-    @if(session('product_updated'))
+    @if(session('product_updated') || session('product_created'))
         <div x-data="{ open: true }" x-show="open" 
              class="fixed inset-0 z-50 flex items-center justify-center p-4"
              style="display: none;"
@@ -549,7 +553,7 @@
                     <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
                 </div>
                 
-                <h3 class="text-xl font-bold text-slate-900 mb-2">Produto Atualizado!</h3>
+                <h3 class="text-xl font-bold text-slate-900 mb-2">{{ session('product_created') ? 'Produto Criado!' : 'Produto Atualizado!' }}</h3>
                 <p class="text-slate-500 mb-8">O que deseja fazer agora?</p>
 
                 <div class="space-y-3">

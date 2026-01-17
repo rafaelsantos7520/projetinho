@@ -52,7 +52,7 @@ class ProductController extends Controller
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'images' => ['nullable', 'array', 'max:3'],
-            'images.*' => ['nullable', 'file', 'image', 'max:5120'],
+            'images.*' => ['nullable', 'file', 'mimes:jpeg,png,jpg,svg,webp', 'max:5120'],
             'image_url' => ['nullable', 'url', 'max:2048'],
             'category_id' => ['nullable', 'exists:categories,id'],
             'is_featured' => ['nullable', 'boolean'],
@@ -112,8 +112,8 @@ class ProductController extends Controller
         $tenant = app()->bound(Tenant::class) ? app(Tenant::class) : null;
 
         return redirect()
-            ->route('tenant_admin.products.index', $tenant ? ['tenant' => $tenant->slug] : [])
-            ->with('status', 'Produto criado.');
+            ->route('tenant_admin.products.edit', ['productId' => $product->id, 'tenant' => $tenant->slug])
+            ->with(['status' => 'Produto criado.', 'product_created' => true]);
     }
 
     public function edit(string $productId): View
@@ -150,9 +150,9 @@ class ProductController extends Controller
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'replace_images' => ['nullable', 'array'],
-            'replace_images.*' => ['nullable', 'file', 'image', 'max:5120'],
+            'replace_images.*' => ['nullable', 'file', 'mimes:jpeg,png,jpg,svg,webp', 'max:5120'],
             'add_images' => ['nullable', 'array', 'max:3'],
-            'add_images.*' => ['nullable', 'file', 'image', 'max:5120'],
+            'add_images.*' => ['nullable', 'file', 'mimes:jpeg,png,jpg,svg,webp', 'max:5120'],
             'remove_images' => ['nullable', 'array'],
             'remove_images.*' => ['integer'],
             'primary_image_id' => ['nullable', 'integer'],
@@ -212,7 +212,7 @@ class ProductController extends Controller
             if (count($removeIds) > 0) {
                 $toRemove = $product->images()->whereIn('id', $removeIds)->get();
                 foreach ($toRemove as $img) {
-                    $this->deleteLocalImageIfApplicable($img->image_url);
+                    $this->deleteImageFromDisk($img->image_url);
                     $img->delete();
                 }
             }
@@ -232,7 +232,7 @@ class ProductController extends Controller
                     $urls = $this->storeProductImages($request, [$file]);
                     $newUrl = $urls[0] ?? null;
                     if (is_string($newUrl) && $newUrl !== '') {
-                        $this->deleteLocalImageIfApplicable($img->image_url);
+                        $this->deleteImageFromDisk($img->image_url);
                         $img->update(['image_url' => $newUrl]);
                     }
                 }
@@ -306,7 +306,7 @@ class ProductController extends Controller
         $tenant = app()->bound(Tenant::class) ? app(Tenant::class) : null;
 
         return redirect()
-            ->route('tenant_admin.products.edit', ['product' => $product->id, 'tenant' => $tenant->slug])
+            ->route('tenant_admin.products.edit', ['productId' => $product->id, 'tenant' => $tenant->slug])
             ->with(['status' => 'Produto atualizado.', 'product_updated' => true]);
     }
 
@@ -331,7 +331,7 @@ class ProductController extends Controller
         }
 
         $tenant = app()->bound(Tenant::class) ? app(Tenant::class) : null;
-        $routeParams = ['product' => $copy->id];
+        $routeParams = ['productId' => $copy->id];
         if ($tenant) {
             $routeParams['tenant'] = $tenant->slug;
         }
@@ -368,10 +368,10 @@ class ProductController extends Controller
 
         if (Product::productImagesTableExists()) {
             foreach ($product->images()->get() as $img) {
-                $this->deleteLocalImageIfApplicable($img->image_url);
+                $this->deleteImageFromDisk($img->image_url);
             }
         }
-        $this->deleteLocalImageIfApplicable($product->image_url);
+        $this->deleteImageFromDisk($product->image_url);
         $product->delete();
 
         $tenant = app()->bound(Tenant::class) ? app(Tenant::class) : null;
@@ -401,7 +401,7 @@ class ProductController extends Controller
         return $urls;
     }
 
-    private function deleteLocalImageIfApplicable(?string $imageUrl): void
+    private function deleteImageFromDisk(?string $imageUrl): void
     {
         if (! is_string($imageUrl) || $imageUrl === '') {
             return;
@@ -412,17 +412,24 @@ class ProductController extends Controller
             return;
         }
 
-        $prefix = '/storage/';
-        if (! str_starts_with($path, $prefix)) {
-            return;
+        // Se for url local antiga (/storage/...), removemos o prefixo
+        if (str_starts_with($path, '/storage/')) {
+            $relative = ltrim(substr($path, 9), '/'); // 9 = strlen('/storage/')
+        } else {
+            // Para R2/S3 w o path já é o relativo (com / inicial)
+            $relative = ltrim($path, '/');
         }
 
-        $relative = ltrim(substr($path, strlen($prefix)), '/');
         if ($relative === '') {
             return;
         }
 
-        Storage::disk($this->productImagesDisk())->delete($relative);
+        try {
+            Storage::disk($this->productImagesDisk())->delete($relative);
+        } catch (\Throwable $e) {
+            // Logar erro ou ignorar silenciosamente se o arquivo já não existir
+            // Log::warning("Could not delete image: $relative. Error: " . $e->getMessage());
+        }
     }
 
     private function productImagesDisk(): string
