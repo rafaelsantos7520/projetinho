@@ -26,13 +26,21 @@
                             <td class="px-4 py-3 font-mono text-xs">{{ $tenant->schema }}</td>
                             <td class="px-4 py-3 text-slate-700">{{ $tenant->domain ?? '—' }}</td>
                             <td class="px-4 py-3">
+                                @php
+                                    $baseDomain = config('tenancy.base_domain');
+                                    $protocol = request()->secure() ? 'https://' : 'http://';
+                                    $port = request()->getPort();
+                                    $portSuffix = ($port && $port != 80 && $port != 443) ? ':' . $port : '';
+                                    $storefrontUrl = $protocol . $tenant->slug . '.' . $baseDomain . $portSuffix . '/';
+                                    $adminUrl = $protocol . $tenant->slug . '.' . $baseDomain . $portSuffix . '/admin';
+                                @endphp
                                 <div class="flex flex-wrap gap-2">
                                     <a class="text-xs px-2 py-1 rounded-lg bg-white border border-slate-200 hover:bg-slate-50"
-                                        href="{{ route('storefront.index', ['tenant' => $tenant->slug]) }}">
+                                        href="{{ $storefrontUrl }}">
                                         Catálogo
                                     </a>
                                     <a class="text-xs px-2 py-1 rounded-lg bg-white border border-slate-200 hover:bg-slate-50"
-                                        href="{{ route('tenant_admin.redirect', ['tenant' => $tenant->slug]) }}">
+                                        href="{{ $adminUrl }}">
                                         Admin Produtos
                                     </a>
                                 </div>

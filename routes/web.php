@@ -137,87 +137,11 @@ if ($baseDomain) {
             });
         });
     });
-} else {
-    // =========================================================================
-    // MODO PATH (ex: meudominio.com/loja?tenant=x) - LEGADO
-    // =========================================================================
+}
 
-    Route::get('/login', function (Request $request) {
-        $intended = session()->get('url.intended');
-        $tenantParam = [];
-        if ($request->has('tenant')) {
-            $tenantParam['tenant'] = $request->query('tenant');
-        }
-        if (is_string($intended) && $intended !== '') {
-            $parts = parse_url($intended);
-            parse_str($parts['query'] ?? '', $query);
-            if (isset($query['tenant']) && ! empty($query['tenant'])) {
-                $tenantParam['tenant'] = $query['tenant'];
-            }
-        }
-        return view('auth.select', ['tenantParam' => $tenantParam]);
-    })->name('login');
-
-    Route::middleware(ForceLandlordSchema::class)->group(function () {
-        Route::get('/start', [OnboardingController::class, 'create'])->name('onboarding.create');
-        Route::post('/start', [OnboardingController::class, 'store'])->name('onboarding.store');
-    });
-
-    Route::get('/', function (Request $request) {
-        $tenant = trim((string) $request->query('tenant', ''));
-        if ($tenant !== '') {
-            $query = $request->query();
-            unset($query['tenant']);
-            return redirect()->route('storefront.index', ['tenant' => $tenant] + $query);
-        }
-        if (Auth::guard('platform')->check()) {
-            return redirect()->route('platform.tenants.index');
-        }
-        return redirect()->route('platform.login');
-    })->middleware(ForceLandlordSchema::class)->name('root');
-
-    // Rotas manuais para Storefront (Path based)
-    Route::get('/loja', [StorefrontController::class, 'index'])->middleware(RequireTenant::class)->name('storefront.index');
-    Route::get('/loja/produto/{productId}', [StorefrontController::class, 'show'])->middleware(RequireTenant::class)->name('storefront.product');
-
-    // Rotas Admin
-    Route::prefix('admin')->name('tenant_admin.')->middleware(RequireTenant::class)->group(function () {
-        Route::get('/redirect', function (Request $request) {
-            $tenant = $request->query('tenant');
-            $params = $tenant ? ['tenant' => $tenant] : [];
-            if (Auth::guard('web')->check()) {
-                return redirect()->route('tenant_admin.products.index', $params);
-            }
-            return redirect()->route('tenant_admin.login', $params);
-        })->name('redirect');
-
-        Route::get('/login', [TenantAdminAuthController::class, 'create'])->middleware('guest')->name('login');
-        Route::post('/login', [TenantAdminAuthController::class, 'store'])->middleware('guest')->name('login.store');
-        Route::post('/logout', [TenantAdminAuthController::class, 'destroy'])->middleware('auth')->name('logout');
-
-        Route::middleware('auth')->group(function () {
-            Route::get('/settings', [TenantAdminSettingsController::class, 'edit'])->name('settings.edit');
-            Route::put('/settings', [TenantAdminSettingsController::class, 'update'])->name('settings.update');
-
-            Route::get('/products', [TenantAdminProductController::class, 'index'])->name('products.index');
-            Route::get('/products/create', [TenantAdminProductController::class, 'create'])->name('products.create');
-            Route::post('/products', [TenantAdminProductController::class, 'store'])->name('products.store');
-            Route::get('/products/{product}/edit', [TenantAdminProductController::class, 'edit'])->name('products.edit');
-            Route::put('/products/{product}', [TenantAdminProductController::class, 'update'])->name('products.update');
-            Route::post('/products/{product}/duplicate', [TenantAdminProductController::class, 'duplicate'])->name('products.duplicate');
-            Route::delete('/products/{product}', [TenantAdminProductController::class, 'destroy'])->name('products.destroy');
-
-            Route::resource('categories', TenantAdminCategoryController::class);
-        });
-    });
-
-    Route::prefix('platform')->name('platform.')->middleware(ForceLandlordSchema::class)->group(function () {
-        Route::get('/login', [PlatformAuthController::class, 'create'])->middleware('guest:platform')->name('login');
-        Route::post('/login', [PlatformAuthController::class, 'store'])->middleware('guest:platform')->name('login.store');
-        Route::post('/logout', [PlatformAuthController::class, 'destroy'])->middleware('auth:platform')->name('logout');
-
-        Route::get('/tenants', [PlatformTenantController::class, 'index'])->middleware('auth:platform')->name('tenants.index');
-        Route::get('/tenants/create', [PlatformTenantController::class, 'create'])->middleware('auth:platform')->name('tenants.create');
-        Route::post('/tenants', [PlatformTenantController::class, 'store'])->middleware('auth:platform')->name('tenants.store');
+// Se TENANCY_BASE_DOMAIN não estiver configurado, exibir erro
+if (!$baseDomain) {
+    Route::fallback(function () {
+        abort(500, 'TENANCY_BASE_DOMAIN não está configurado no .env. Configure o domínio base para a aplicação funcionar.');
     });
 }
