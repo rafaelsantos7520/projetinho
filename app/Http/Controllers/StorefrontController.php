@@ -103,8 +103,12 @@ class StorefrontController extends Controller
         ]);
     }
 
-    public function show(string $productId): View
+    public function show(Product $product): View
     {
+        if (! $product->is_active) {
+            abort(404);
+        }
+
         $storeSettings = StoreSettings::current();
 
         // Carregar categorias uma única vez para reutilizar
@@ -122,12 +126,8 @@ class StorefrontController extends Controller
             $relations[] = 'images';
         }
 
-        // Buscar o produto manualmente dentro do contexto do tenant
-        $product = Product::query()
-            ->with($relations)
-            ->where('id', $productId)
-            ->where('is_active', true)
-            ->firstOrFail();
+        // Load relations
+        $product->load($relations);
 
         // Definir a categoria do cache carregado
         if ($categories->has($product->category_id)) {

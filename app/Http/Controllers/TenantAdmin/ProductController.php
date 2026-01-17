@@ -112,21 +112,18 @@ class ProductController extends Controller
         $tenant = app()->bound(Tenant::class) ? app(Tenant::class) : null;
 
         return redirect()
-            ->route('tenant_admin.products.edit', ['productId' => $product->id, 'tenant' => $tenant->slug])
+            ->route('tenant_admin.products.edit', ['product' => $product, 'tenant' => $tenant->slug])
             ->with(['status' => 'Produto criado.', 'product_created' => true]);
     }
 
-    public function edit(string $productId): View
+    public function edit(Product $product): View
     {
         $relations = [];
         if (Product::productImagesTableExists()) {
             $relations[] = 'images';
         }
 
-        $product = Product::query()
-            ->with($relations)
-            ->where('id', $productId)
-            ->firstOrFail();
+        $product->load($relations);
 
         if (! Product::productImagesTableExists()) {
             $product->setRelation('images', collect());
@@ -140,10 +137,9 @@ class ProductController extends Controller
         ]);
     }
 
-    public function update(Request $request, string $productId): RedirectResponse
+    public function update(Request $request, Product $product): RedirectResponse
     {
-        // Buscar o produto dentro do contexto do tenant
-        $product = Product::query()->where('id', $productId)->firstOrFail();
+        // $product is already bound
 
         $this->convertMoneyInputs($request);
 
@@ -306,14 +302,13 @@ class ProductController extends Controller
         $tenant = app()->bound(Tenant::class) ? app(Tenant::class) : null;
 
         return redirect()
-            ->route('tenant_admin.products.edit', ['productId' => $product->id, 'tenant' => $tenant->slug])
+            ->route('tenant_admin.products.edit', ['product' => $product, 'tenant' => $tenant->slug])
             ->with(['status' => 'Produto atualizado.', 'product_updated' => true]);
     }
 
-    public function duplicate(string $productId): RedirectResponse
+    public function duplicate(Product $product): RedirectResponse
     {
-        // Buscar o produto dentro do contexto do tenant
-        $product = Product::query()->where('id', $productId)->firstOrFail();
+        // $product is already bound
 
         $copy = $product->replicate();
         $copy->name = $copy->name.' (Cópia)';
@@ -331,7 +326,7 @@ class ProductController extends Controller
         }
 
         $tenant = app()->bound(Tenant::class) ? app(Tenant::class) : null;
-        $routeParams = ['productId' => $copy->id];
+        $routeParams = ['product' => $copy];
         if ($tenant) {
             $routeParams['tenant'] = $tenant->slug;
         }
@@ -361,10 +356,9 @@ class ProductController extends Controller
         }
     }
 
-    public function destroy(string $productId): RedirectResponse
+    public function destroy(Product $product): RedirectResponse
     {
-        // Buscar o produto dentro do contexto do tenant
-        $product = Product::query()->where('id', $productId)->firstOrFail();
+        // $product is already bound
 
         if (Product::productImagesTableExists()) {
             foreach ($product->images()->get() as $img) {

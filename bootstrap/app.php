@@ -23,6 +23,10 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->prependToPriorityList(RedirectIfAuthenticated::class, \App\Http\Middleware\RequireTenant::class);
 
         $middleware->redirectGuestsTo(function (\Illuminate\Http\Request $request) {
+            if (app()->bound(\App\Models\Tenant::class)) {
+                return route('tenant_admin.login');
+            }
+
             $tenant = $request->query('tenant');
             if ($tenant) {
                 return route('tenant_admin.login', ['tenant' => $tenant]);

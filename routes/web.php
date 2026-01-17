@@ -26,14 +26,15 @@ $baseDomain = config('tenancy.base_domain');
 */
 $tenantRoutes = function () {
     Route::get('/', [StorefrontController::class, 'index'])->name('storefront.index');
-    Route::get('/produto/{productId}', [StorefrontController::class, 'show'])->name('storefront.product');
+    Route::get('/produto/{product}', [StorefrontController::class, 'show'])->name('storefront.product');
 
     // Redirecionamento de compatibilidade
     Route::get('/loja', function () {
         return redirect()->route('storefront.index');
     });
-    Route::get('/loja/produto/{productId}', function ($productId) {
-        return redirect()->route('storefront.product', $productId);
+    // Compatibilidade com antigo formato ID, se necessário, ou apenas deixe o novo
+    Route::get('/loja/produto/{product}', function ($product) {
+        return redirect()->route('storefront.product', $product);
     });
 
     Route::prefix('admin')->name('tenant_admin.')->group(function () {
@@ -55,10 +56,10 @@ $tenantRoutes = function () {
             Route::get('/products', [TenantAdminProductController::class, 'index'])->name('products.index');
             Route::get('/products/create', [TenantAdminProductController::class, 'create'])->name('products.create');
             Route::post('/products', [TenantAdminProductController::class, 'store'])->name('products.store');
-            Route::get('/products/{productId}/edit', [TenantAdminProductController::class, 'edit'])->name('products.edit');
-            Route::put('/products/{productId}', [TenantAdminProductController::class, 'update'])->name('products.update');
-            Route::post('/products/{productId}/duplicate', [TenantAdminProductController::class, 'duplicate'])->name('products.duplicate');
-            Route::delete('/products/{productId}', [TenantAdminProductController::class, 'destroy'])->name('products.destroy');
+            Route::get('/products/{product}/edit', [TenantAdminProductController::class, 'edit'])->name('products.edit');
+            Route::put('/products/{product}', [TenantAdminProductController::class, 'update'])->name('products.update');
+            Route::post('/products/{product}/duplicate', [TenantAdminProductController::class, 'duplicate'])->name('products.duplicate');
+            Route::delete('/products/{product}', [TenantAdminProductController::class, 'destroy'])->name('products.destroy');
 
             Route::patch('/categories/{categoryId}/toggle', [TenantAdminCategoryController::class, 'toggle'])->name('categories.toggle');
             Route::resource('categories', TenantAdminCategoryController::class)->parameters([

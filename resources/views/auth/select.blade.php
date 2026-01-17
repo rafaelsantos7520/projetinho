@@ -10,11 +10,18 @@
                     <div class="font-semibold">Plataforma</div>
                     <div class="text-sm text-slate-600 mt-1">Criar e listar lojas (tenants).</div>
                 </a>
+                @if(!empty($tenantParam['tenant']))
                 <a href="{{ route('tenant_admin.login', $tenantParam ?? []) }}"
                     class="rounded-2xl border border-slate-200 bg-slate-50 p-5 hover:bg-slate-100">
                     <div class="font-semibold">Admin da Loja</div>
                     <div class="text-sm text-slate-600 mt-1">Gerenciar produtos do tenant atual.</div>
                 </a>
+                @else
+                <div class="rounded-2xl border border-slate-200 bg-slate-50 p-5 opacity-60 cursor-not-allowed">
+                    <div class="font-semibold">Admin da Loja</div>
+                    <div class="text-sm text-slate-600 mt-1">Acesse pelo subdomínio da sua loja.</div>
+                </div>
+                @endif
             </div>
         </div>
     </div>

@@ -18,6 +18,7 @@ class Product extends Model
     }
     protected $fillable = [
         'name',
+        'slug',
         'image_url',
         'category_id',
         'is_featured',
@@ -37,6 +38,40 @@ class Product extends Model
         'is_active' => 'boolean',
         'has_variants' => 'boolean',
     ];
+
+    public function getRouteKeyName(): string
+    {
+        return 'slug';
+    }
+
+    protected static function boot()
+    {
+        parent::boot();
+
+        static::creating(function ($product) {
+            $product->slug = static::generateUniqueSlug($product->name);
+        });
+
+        static::updating(function ($product) {
+             if ($product->isDirty('name') && !$product->isDirty('slug')) {
+                $product->slug = static::generateUniqueSlug($product->name, $product->id);
+             }
+        });
+    }
+
+    protected static function generateUniqueSlug(string $name, ?int $ignoreId = null): string
+    {
+        $slug = \Illuminate\Support\Str::slug($name);
+        $originalSlug = $slug;
+        $count = 1;
+
+        // Ensure uniqueness
+        while (static::where('slug', $slug)->where('id', '!=', $ignoreId)->exists()) {
+            $slug = $originalSlug . '-' . ++$count;
+        }
+
+        return $slug;
+    }
 
     public function category(): BelongsTo
     {
