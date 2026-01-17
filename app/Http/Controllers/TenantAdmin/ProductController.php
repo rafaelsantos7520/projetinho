@@ -62,6 +62,22 @@ class ProductController extends Controller
             'description' => ['nullable', 'string'],
             'rating_avg' => ['nullable', 'numeric', 'min:0', 'max:5'],
             'rating_count' => ['nullable', 'integer', 'min:0'],
+        ], [
+            'name.required' => 'Informe o nome do produto.',
+            'name.max' => 'O nome do produto deve ter no máximo :max caracteres.',
+            'images.array' => 'As imagens enviadas são inválidas.',
+            'images.max' => 'Máximo de :max imagens por produto.',
+            'images.*.image' => 'Cada arquivo deve ser uma imagem válida.',
+            'images.*.max' => 'Cada imagem pode ter no máximo 5MB.',
+            'image_url.url' => 'A URL da imagem principal é inválida.',
+            'category_id.exists' => 'A categoria selecionada é inválida.',
+            'price_cents.required' => 'Informe o preço do produto.',
+            'price_cents.integer' => 'O preço do produto é inválido.',
+            'price_cents.min' => 'O preço do produto não pode ser negativo.',
+            'promo_price_cents.integer' => 'O preço promocional é inválido.',
+            'promo_price_cents.min' => 'O preço promocional não pode ser negativo.',
+            'compare_at_price_cents.integer' => 'O preço \"de\" é inválido.',
+            'compare_at_price_cents.min' => 'O preço \"de\" não pode ser negativo.',
         ]);
 
         $validated['is_featured'] = (bool) ($validated['is_featured'] ?? false);
@@ -130,6 +146,28 @@ class ProductController extends Controller
             'description' => ['nullable', 'string'],
             'rating_avg' => ['nullable', 'numeric', 'min:0', 'max:5'],
             'rating_count' => ['nullable', 'integer', 'min:0'],
+        ], [
+            'name.required' => 'Informe o nome do produto.',
+            'name.max' => 'O nome do produto deve ter no máximo :max caracteres.',
+            'replace_images.array' => 'Imagens para substituir são inválidas.',
+            'replace_images.*.image' => 'Cada arquivo deve ser uma imagem válida.',
+            'replace_images.*.max' => 'Cada imagem pode ter no máximo 5MB.',
+            'add_images.array' => 'Imagens adicionais são inválidas.',
+            'add_images.max' => 'Máximo de :max imagens adicionais por vez.',
+            'add_images.*.image' => 'Cada arquivo deve ser uma imagem válida.',
+            'add_images.*.max' => 'Cada imagem pode ter no máximo 5MB.',
+            'remove_images.array' => 'Imagens para remover são inválidas.',
+            'remove_images.*.integer' => 'Imagem para remover inválida.',
+            'primary_image_id.integer' => 'Imagem principal inválida.',
+            'image_url.url' => 'A URL da imagem principal é inválida.',
+            'category_id.exists' => 'A categoria selecionada é inválida.',
+            'price_cents.required' => 'Informe o preço do produto.',
+            'price_cents.integer' => 'O preço do produto é inválido.',
+            'price_cents.min' => 'O preço do produto não pode ser negativo.',
+            'promo_price_cents.integer' => 'O preço promocional é inválido.',
+            'promo_price_cents.min' => 'O preço promocional não pode ser negativo.',
+            'compare_at_price_cents.integer' => 'O preço \"de\" é inválido.',
+            'compare_at_price_cents.min' => 'O preço \"de\" não pode ser negativo.',
         ]);
 
         $validated['is_featured'] = (bool) ($validated['is_featured'] ?? false);
@@ -235,6 +273,32 @@ class ProductController extends Controller
             ->with('status', 'Produto atualizado.');
     }
 
+    public function duplicate(Product $product): RedirectResponse
+    {
+        $copy = $product->replicate();
+        $copy->name = $copy->name.' (Cópia)';
+        $copy->save();
+
+        $images = $product->images()->get();
+        foreach ($images as $image) {
+            ProductImage::query()->create([
+                'product_id' => $copy->id,
+                'image_url' => $image->image_url,
+                'sort_order' => $image->sort_order,
+            ]);
+        }
+
+        $tenant = app()->bound(Tenant::class) ? app(Tenant::class) : null;
+        $routeParams = ['product' => $copy->id];
+        if ($tenant) {
+            $routeParams['tenant'] = $tenant->slug;
+        }
+
+        return redirect()
+            ->route('tenant_admin.products.edit', $routeParams)
+            ->with('status', 'Produto duplicado. Ajuste as informações antes de salvar.');
+    }
+
     private function convertMoneyInputs(Request $request): void
     {
         $fields = ['price', 'promo_price', 'compare_at_price'];
@@ -275,15 +339,17 @@ class ProductController extends Controller
     {
         $tenant = app()->bound(Tenant::class) ? app(Tenant::class) : null;
         $tenantSlug = $tenant?->slug ?? 'default';
+        $disk = Storage::disk($this->productImagesDisk());
 
         $urls = [];
         foreach ($images as $file) {
-            $filePath = $file->storePublicly(
+            $filePath = $disk->putFile(
                 'tenants/'.$tenantSlug.'/products',
+                $file,
                 'public'
             );
 
-            $urls[] = Storage::disk('public')->url($filePath);
+            $urls[] = $disk->url($filePath);
         }
 
         return $urls;
@@ -310,6 +376,11 @@ class ProductController extends Controller
             return;
         }
 
-        Storage::disk('public')->delete($relative);
+        Storage::disk($this->productImagesDisk())->delete($relative);
+    }
+
+    private function productImagesDisk(): string
+    {
+        return (string) config('filesystems.product_images_disk', 'public');
     }
 }

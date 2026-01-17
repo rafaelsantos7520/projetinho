@@ -14,6 +14,7 @@ return [
     */
 
     'default' => env('FILESYSTEM_DISK', 'local'),
+    'product_images_disk' => env('PRODUCT_IMAGES_DISK', 'public'),
 
     /*
     |--------------------------------------------------------------------------
@@ -42,6 +43,15 @@ return [
             'driver' => 'local',
             'root' => storage_path('app/public'),
             'url' => rtrim(env('APP_URL'), '/').'/storage',
+            'visibility' => 'public',
+            'throw' => false,
+            'report' => false,
+        ],
+
+        'product_images' => [
+            'driver' => env('PRODUCT_IMAGES_DRIVER', 'local'),
+            'root' => env('PRODUCT_IMAGES_ROOT', storage_path('app/public')),
+            'url' => env('PRODUCT_IMAGES_URL', rtrim(env('APP_URL'), '/').'/storage'),
             'visibility' => 'public',
             'throw' => false,
             'report' => false,

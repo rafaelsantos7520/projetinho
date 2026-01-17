@@ -172,10 +172,20 @@
                                     </span>
                                 </td>
                                 <td class="px-6 py-4 text-right">
-                                    <a href="{{ route('tenant_admin.products.edit', ['product' => $product->id, 'tenant' => $tenantSlug]) }}"
-                                        class="text-slate-400 hover:text-indigo-600 font-medium transition-colors">
-                                        Editar
-                                    </a>
+                                    <div class="flex items-center justify-end gap-3">
+                                        <a href="{{ route('tenant_admin.products.edit', ['product' => $product->id, 'tenant' => $tenantSlug]) }}"
+                                            class="text-slate-400 hover:text-indigo-600 font-medium transition-colors">
+                                            Editar
+                                        </a>
+                                        <form method="POST" action="{{ route('tenant_admin.products.duplicate', ['product' => $product->id, 'tenant' => $tenantSlug]) }}"
+                                            onsubmit="return confirm('Duplicar este produto?');">
+                                            @csrf
+                                            <button type="submit"
+                                                class="text-slate-400 hover:text-emerald-600 font-medium transition-colors">
+                                                Duplicar
+                                            </button>
+                                        </form>
+                                    </div>
                                 </td>
                             </tr>
                         @empty

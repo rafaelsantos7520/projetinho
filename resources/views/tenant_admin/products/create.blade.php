@@ -54,26 +54,40 @@
                             <div class="text-xs text-slate-500 mt-1">Preço, desconto e descrição.</div>
                         </div>
                         <div class="p-5 space-y-6">
-                            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                 <div>
                                     <label class="block text-sm font-medium text-slate-700 mb-1">Preço</label>
                                     <div class="relative">
                                         <span class="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-slate-500">R$</span>
-                                        <input type="text" name="price_formatted" x-model="price" x-on:input="price = inputMoney($event.target.value)" x-on:blur="price = blurMoney($event.target.value)" required class="w-full rounded-xl border border-slate-200 pl-10 pr-3 py-2 focus:outline-none focus:ring-2 focus:ring-slate-900/20">
+                                        <input
+                                            type="text"
+                                            name="price_formatted"
+                                            x-model="price"
+                                            x-on:input="price = inputMoney($event.target.value)"
+                                            x-on:blur="price = blurMoney($event.target.value)"
+                                            required
+                                            inputmode="decimal"
+                                            autocomplete="off"
+                                            placeholder="0,00"
+                                            class="w-full rounded-xl border border-slate-200 pl-12 pr-3 py-2 focus:outline-none focus:ring-2 focus:ring-slate-900/20"
+                                        >
                                     </div>
                                 </div>
                                 <div>
                                     <label class="block text-sm font-medium text-slate-700 mb-1">Preço Promocional</label>
                                     <div class="relative">
                                         <span class="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-slate-500">R$</span>
-                                        <input type="text" name="promo_price_formatted" x-model="promo" x-on:input="promo = inputMoney($event.target.value)" x-on:blur="promo = blurMoney($event.target.value)" class="w-full rounded-xl border border-slate-200 pl-10 pr-3 py-2 focus:outline-none focus:ring-2 focus:ring-slate-900/20">
-                                    </div>
-                                </div>
-                                <div>
-                                    <label class="block text-sm font-medium text-slate-700 mb-1">Preço "De"</label>
-                                    <div class="relative">
-                                        <span class="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-slate-500">R$</span>
-                                        <input type="text" name="compare_at_price_formatted" x-model="compare" x-on:input="compare = inputMoney($event.target.value)" x-on:blur="compare = blurMoney($event.target.value)" class="w-full rounded-xl border border-slate-200 pl-10 pr-3 py-2 focus:outline-none focus:ring-2 focus:ring-slate-900/20">
+                                        <input
+                                            type="text"
+                                            name="promo_price_formatted"
+                                            x-model="promo"
+                                            x-on:input="promo = inputMoney($event.target.value)"
+                                            x-on:blur="promo = blurMoney($event.target.value)"
+                                            inputmode="decimal"
+                                            autocomplete="off"
+                                            placeholder="0,00"
+                                            class="w-full rounded-xl border border-slate-200 pl-12 pr-3 py-2 focus:outline-none focus:ring-2 focus:ring-slate-900/20"
+                                        >
                                     </div>
                                 </div>
                             </div>
