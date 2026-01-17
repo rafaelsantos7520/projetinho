@@ -173,7 +173,7 @@
                                 </td>
                                 <td class="px-6 py-4 text-right">
                                     <div class="flex items-center justify-end gap-3">
-                                        <a href="{{ route('storefront.product', ['tenant' => $tenantSlug, 'product' => $product->id]) }}" target="_blank"
+                                        <a href="{{ route('storefront.product', ['tenant' => $tenantSlug, 'productId' => $product->id]) }}" target="_blank"
                                             class="text-slate-400 hover:text-blue-600 font-medium transition-colors" title="Ver na Loja">
                                             <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
                                         </a>

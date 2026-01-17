@@ -5,7 +5,7 @@
 @php($count = (int) ($product->rating_count ?? 0))
 
 <div class="group rounded-3xl border border-slate-200 bg-white overflow-hidden hover:shadow-2xl hover:shadow-slate-900/10 transition-all duration-300 hover:-translate-y-1">
-    <a href="{{ route('storefront.product', ['tenant' => app(\App\Models\Tenant::class)->slug, 'product' => $product->id]) }}" class="block relative aspect-square bg-slate-100 overflow-hidden">
+    <a href="{{ route('storefront.product', ['tenant' => app(\App\Models\Tenant::class)->slug, 'productId' => $product->id]) }}" class="block relative aspect-square bg-slate-100 overflow-hidden">
         <img
             src="{{ $product->primary_image_url ?? ('https://picsum.photos/seed/'.urlencode((string) $product->id).'/500/500') }}"
             onerror="this.onerror=null;this.src='https://picsum.photos/seed/{{ urlencode((string) $product->id) }}/500/500'"
@@ -39,7 +39,7 @@
         @endif
     </a>
     <div class="p-5">
-        <a href="{{ route('storefront.product', ['tenant' => app(\App\Models\Tenant::class)->slug, 'product' => $product->id]) }}" class="block">
+        <a href="{{ route('storefront.product', ['tenant' => app(\App\Models\Tenant::class)->slug, 'productId' => $product->id]) }}" class="block">
             <h3 class="font-bold text-slate-900 truncate transition-colors hover:opacity-80">{{ $product->name }}</h3>
             <p class="text-xs text-slate-500 mt-1">{{ $product->category->name ?? 'Geral' }}</p>
         </a>
@@ -53,7 +53,7 @@
                     @endif
                 </div>
             </div>
-            <a href="{{ route('storefront.product', ['tenant' => app(\App\Models\Tenant::class)->slug, 'product' => $product->id]) }}" class="h-10 w-10 rounded-full bg-slate-100 text-slate-900 flex items-center justify-center hover:bg-primary hover:text-white transition-colors shadow-sm group-hover:shadow-md" aria-label="Ver produto">
+            <a href="{{ route('storefront.product', ['tenant' => app(\App\Models\Tenant::class)->slug, 'productId' => $product->id]) }}" class="h-10 w-10 rounded-full bg-slate-100 text-slate-900 flex items-center justify-center hover:bg-primary hover:text-white transition-colors shadow-sm group-hover:shadow-md" aria-label="Ver produto">
                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
             </a>
         </div>
