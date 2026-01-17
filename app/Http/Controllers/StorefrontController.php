@@ -103,7 +103,7 @@ class StorefrontController extends Controller
         ]);
     }
 
-    public function show(string $product): View
+    public function show(string $productId): View
     {
         $storeSettings = StoreSettings::current();
 
@@ -125,7 +125,7 @@ class StorefrontController extends Controller
         // Buscar o produto manualmente dentro do contexto do tenant
         $product = Product::query()
             ->with($relations)
-            ->where('id', $product)
+            ->where('id', $productId)
             ->where('is_active', true)
             ->firstOrFail();
 

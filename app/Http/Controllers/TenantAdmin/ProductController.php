@@ -116,7 +116,7 @@ class ProductController extends Controller
             ->with('status', 'Produto criado.');
     }
 
-    public function edit(string $product): View
+    public function edit(string $productId): View
     {
         $relations = [];
         if (Product::productImagesTableExists()) {
@@ -125,7 +125,7 @@ class ProductController extends Controller
 
         $product = Product::query()
             ->with($relations)
-            ->where('id', $product)
+            ->where('id', $productId)
             ->firstOrFail();
 
         if (! Product::productImagesTableExists()) {
@@ -140,10 +140,10 @@ class ProductController extends Controller
         ]);
     }
 
-    public function update(Request $request, string $product): RedirectResponse
+    public function update(Request $request, string $productId): RedirectResponse
     {
         // Buscar o produto dentro do contexto do tenant
-        $product = Product::query()->where('id', $product)->firstOrFail();
+        $product = Product::query()->where('id', $productId)->firstOrFail();
 
         $this->convertMoneyInputs($request);
 
@@ -310,10 +310,10 @@ class ProductController extends Controller
             ->with(['status' => 'Produto atualizado.', 'product_updated' => true]);
     }
 
-    public function duplicate(string $product): RedirectResponse
+    public function duplicate(string $productId): RedirectResponse
     {
         // Buscar o produto dentro do contexto do tenant
-        $product = Product::query()->where('id', $product)->firstOrFail();
+        $product = Product::query()->where('id', $productId)->firstOrFail();
 
         $copy = $product->replicate();
         $copy->name = $copy->name.' (Cópia)';
@@ -361,10 +361,10 @@ class ProductController extends Controller
         }
     }
 
-    public function destroy(string $product): RedirectResponse
+    public function destroy(string $productId): RedirectResponse
     {
         // Buscar o produto dentro do contexto do tenant
-        $product = Product::query()->where('id', $product)->firstOrFail();
+        $product = Product::query()->where('id', $productId)->firstOrFail();
 
         if (Product::productImagesTableExists()) {
             foreach ($product->images()->get() as $img) {

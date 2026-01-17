@@ -45,17 +45,17 @@ class CategoryController extends Controller
             ->with('status', 'Categoria criada com sucesso!');
     }
 
-    public function edit(string $category)
+    public function edit(string $categoryId)
     {
-        $category = Category::query()->where('id', $category)->firstOrFail();
+        $category = Category::query()->where('id', $categoryId)->firstOrFail();
 
         return view('tenant_admin.categories.edit', compact('category'));
     }
 
-    public function update(Request $request, string $category)
+    public function update(Request $request, string $categoryId)
     {
         // Buscar a categoria dentro do contexto do tenant
-        $category = Category::query()->where('id', $category)->firstOrFail();
+        $category = Category::query()->where('id', $categoryId)->firstOrFail();
 
         $validated = $request->validate([
             'name' => 'required|string|max:255',
@@ -84,9 +84,9 @@ class CategoryController extends Controller
             ->with('status', 'Categoria atualizada com sucesso!');
     }
 
-    public function destroy(string $category)
+    public function destroy(string $categoryId)
     {
-        $category = Category::query()->where('id', $category)->firstOrFail();
+        $category = Category::query()->where('id', $categoryId)->firstOrFail();
 
         $this->deleteLocalImageIfApplicable($category->image_url);
         $category->delete();
@@ -95,9 +95,9 @@ class CategoryController extends Controller
             ->with('status', 'Categoria removida com sucesso!');
     }
 
-    public function toggle(string $category)
+    public function toggle(string $categoryId)
     {
-        $category = Category::query()->where('id', $category)->firstOrFail();
+        $category = Category::query()->where('id', $categoryId)->firstOrFail();
 
         // Validação: não pode desativar se tem produtos ativos
         if ($category->is_active) {
