@@ -116,13 +116,22 @@ class ProductController extends Controller
             ->with('status', 'Produto criado.');
     }
 
-    public function edit(Product $product): View
+    public function edit(string $product): View
     {
+        $relations = [];
         if (Product::productImagesTableExists()) {
-            $product->load('images');
-        } else {
+            $relations[] = 'images';
+        }
+
+        $product = Product::query()
+            ->with($relations)
+            ->where('id', $product)
+            ->firstOrFail();
+
+        if (! Product::productImagesTableExists()) {
             $product->setRelation('images', collect());
         }
+
         $categories = Category::query()->orderBy('name')->get();
 
         return view('tenant_admin.products.edit', [
@@ -131,8 +140,11 @@ class ProductController extends Controller
         ]);
     }
 
-    public function update(Request $request, Product $product): RedirectResponse
+    public function update(Request $request, string $product): RedirectResponse
     {
+        // Buscar o produto dentro do contexto do tenant
+        $product = Product::query()->where('id', $product)->firstOrFail();
+
         $this->convertMoneyInputs($request);
 
         $validated = $request->validate([
@@ -298,8 +310,11 @@ class ProductController extends Controller
             ->with(['status' => 'Produto atualizado.', 'product_updated' => true]);
     }
 
-    public function duplicate(Product $product): RedirectResponse
+    public function duplicate(string $product): RedirectResponse
     {
+        // Buscar o produto dentro do contexto do tenant
+        $product = Product::query()->where('id', $product)->firstOrFail();
+
         $copy = $product->replicate();
         $copy->name = $copy->name.' (Cópia)';
         $copy->save();
@@ -346,8 +361,11 @@ class ProductController extends Controller
         }
     }
 
-    public function destroy(Product $product): RedirectResponse
+    public function destroy(string $product): RedirectResponse
     {
+        // Buscar o produto dentro do contexto do tenant
+        $product = Product::query()->where('id', $product)->firstOrFail();
+
         if (Product::productImagesTableExists()) {
             foreach ($product->images()->get() as $img) {
                 $this->deleteLocalImageIfApplicable($img->image_url);

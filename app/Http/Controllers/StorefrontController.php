@@ -103,20 +103,25 @@ class StorefrontController extends Controller
         ]);
     }
 
-    public function show(Product $product): View
+    public function show(string $product): View
     {
         $storeSettings = StoreSettings::current();
 
         $relations = ['category'];
         if (Product::productImagesTableExists()) {
             $relations[] = 'images';
-        } else {
-            $product->setRelation('images', collect());
         }
 
-        $product->load($relations);
-        if (! $product->is_active) {
-            abort(404);
+        // Buscar o produto manualmente dentro do contexto do tenant
+        $product = Product::query()
+            ->with($relations)
+            ->where('id', $product)
+            ->where('is_active', true)
+            ->firstOrFail();
+
+        // Se não tem a tabela de imagens, define uma coleção vazia
+        if (! Product::productImagesTableExists()) {
+            $product->setRelation('images', collect());
         }
 
         $related = Product::query()
