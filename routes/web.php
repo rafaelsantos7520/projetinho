@@ -26,6 +26,7 @@ $baseDomain = config('tenancy.base_domain');
 */
 $tenantRoutes = function () {
     Route::get('/', [StorefrontController::class, 'index'])->name('storefront.index');
+    Route::get('/produtos', [StorefrontController::class, 'products'])->name('storefront.products');
     Route::get('/produto/{product}', [StorefrontController::class, 'show'])->name('storefront.product');
 
     // Redirecionamento de compatibilidade

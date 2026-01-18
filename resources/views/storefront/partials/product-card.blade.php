@@ -7,8 +7,8 @@
 <div class="group rounded-3xl border border-slate-200 bg-white overflow-hidden hover:shadow-2xl hover:shadow-slate-900/10 transition-all duration-300 hover:-translate-y-1">
     <a href="{{ route('storefront.product', ['tenant' => app(\App\Models\Tenant::class)->slug, 'product' => $product]) }}" class="block relative aspect-square bg-slate-100 overflow-hidden">
         <img
-            src="{{ $product->primary_image_url ?? ('https://picsum.photos/seed/'.urlencode((string) $product->id).'/500/500') }}"
-            onerror="this.onerror=null;this.src='https://picsum.photos/seed/{{ urlencode((string) $product->id) }}/500/500'"
+            src="{{ $product->primary_image_url ?? asset('images/product-placeholder.png') }}"
+            onerror="this.onerror=null;this.src='{{ asset('images/product-placeholder.png') }}'"
             alt="Imagem do produto {{ $product->name }}"
             loading="lazy"
             decoding="async"

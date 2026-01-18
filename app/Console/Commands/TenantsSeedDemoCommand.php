@@ -81,13 +81,14 @@ class TenantsSeedDemoCommand extends Command
             $names[] = 'Categoria '.Str::upper(Str::random(4));
         }
 
-        foreach ($names as $name) {
+        foreach ($names as $index => $name) {
             $slug = Str::slug($name);
             Category::query()->firstOrCreate(
                 ['slug' => $slug],
                 [
                     'name' => $name,
-                    'image_url' => 'https://picsum.photos/seed/'.urlencode($tenantSlug.'-'.$slug).'/200/200',
+                    'sort_order' => $index,
+                    'is_active' => true,
                 ]
             );
         }
@@ -129,20 +130,8 @@ class TenantsSeedDemoCommand extends Command
                 'rating_count' => random_int(0, 500),
             ]);
 
-            $urls = [];
-            for ($img = 1; $img <= 3; $img++) {
-                $urls[] = 'https://picsum.photos/seed/'.urlencode($tenantSlug.'-'.$product->id.'-'.$img).'/800/800';
-            }
-
-            foreach ($urls as $idx => $url) {
-                ProductImage::query()->create([
-                    'product_id' => $product->id,
-                    'image_url' => $url,
-                    'sort_order' => $idx,
-                ]);
-            }
-
-            $product->update(['image_url' => $urls[0]]);
+            // Cria imagens vazias (usará placeholder)
+            // Não cria ProductImage para usar o fallback do placeholder
         }
     }
 }

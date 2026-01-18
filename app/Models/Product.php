@@ -19,7 +19,6 @@ class Product extends Model
     protected $fillable = [
         'name',
         'slug',
-        'image_url',
         'category_id',
         'is_featured',
         'is_active',
@@ -97,12 +96,11 @@ class Product extends Model
         return $this->hasMany(ProductOption::class)->orderBy('sort_order');
     }
 
+    /**
+     * Retorna a URL da imagem principal do produto (primeira da galeria)
+     */
     public function getPrimaryImageUrlAttribute(): ?string
     {
-        if (! static::productImagesTableExists()) {
-            return $this->image_url;
-        }
-
         try {
             $image = $this->relationLoaded('images')
                 ? $this->images->first()
@@ -112,9 +110,9 @@ class Product extends Model
                 return $image->image_url;
             }
 
-            return $this->image_url;
+            return null;
         } catch (\Throwable) {
-            return $this->image_url;
+            return null;
         }
     }
 

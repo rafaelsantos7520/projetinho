@@ -26,13 +26,13 @@
 
             <div class="hidden md:flex items-center gap-6 text-sm font-medium text-slate-600">
                 @foreach ($categories->take(5) as $cat)
-                    <a href="{{ route('storefront.index', ['tenant' => $tenantSlug, 'category' => $cat->name]) }}"
+                    <a href="{{ route('storefront.products', ['tenant' => $tenantSlug, 'category' => $cat->slug ?? $cat->name]) }}"
                         class="hover:text-primary">{{ $cat->name }}</a>
                 @endforeach
             </div>
 
             <div class="flex items-center gap-4">
-                <a href="{{ route('storefront.index', ['tenant' => $tenantSlug]) }}"
+                <a href="{{ route('storefront.products', ['tenant' => $tenantSlug]) }}"
                     class="p-2 text-slate-400 hover:text-slate-600">
                     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
                         fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
@@ -64,7 +64,7 @@
                     class="hover:text-primary">Início</a>
                 <span class="mx-2">/</span>
                 @if ($product->category)
-                    <a href="{{ route('storefront.index', ['tenant' => $tenantSlug, 'category' => $product->category->name]) }}"
+                    <a href="{{ route('storefront.products', ['tenant' => $tenantSlug, 'category' => $product->category->slug ?? $product->category->name]) }}"
                         class="hover:text-primary">{{ $product->category->name }}</a>
                     <span class="mx-2">/</span>
                 @endif
@@ -75,8 +75,9 @@
                 {{-- Galeria de Imagens --}}
                 <div class="space-y-4">
                     <div class="aspect-square bg-slate-100 rounded-3xl overflow-hidden relative group">
-                        <img src="{{ $product->primary_image_url ?? 'https://picsum.photos/seed/' . urlencode((string) $product->id) . '/800/800' }}"
+                        <img src="{{ $product->primary_image_url ?? asset('images/product-placeholder.png') }}"
                             alt="{{ $product->name }}"
+                            onerror="this.onerror=null;this.src='{{ asset('images/product-placeholder.png') }}'"
                             class="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-500">
                         @if ($discount > 0)
                             <span
@@ -90,7 +91,8 @@
                             @for ($i = 0; $i < 4; $i++)
                                 <div
                                     class="aspect-square bg-slate-50 rounded-xl overflow-hidden cursor-pointer border-2 {{ $i === 0 ? 'border-primary' : 'border-transparent hover:border-slate-200' }}">
-                                    <img src="{{ $product->primary_image_url ?? 'https://picsum.photos/seed/' . urlencode((string) $product->id) . '/200/200' }}"
+                                    <img src="{{ $product->primary_image_url ?? asset('images/product-placeholder.png') }}"
+                                        onerror="this.onerror=null;this.src='{{ asset('images/product-placeholder.png') }}'"
                                         class="w-full h-full object-cover">
                                 </div>
                             @endfor

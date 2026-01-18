@@ -53,7 +53,6 @@ class ProductController extends Controller
             'name' => ['required', 'string', 'max:255'],
             'images' => ['nullable', 'array', 'max:3'],
             'images.*' => ['nullable', 'file', 'mimes:jpeg,png,jpg,svg,webp', 'max:5120'],
-            'image_url' => ['nullable', 'url', 'max:2048'],
             'category_id' => ['nullable', 'exists:categories,id'],
             'is_featured' => ['nullable', 'boolean'],
             'size' => ['nullable', 'string', 'max:20'],
@@ -70,7 +69,6 @@ class ProductController extends Controller
             'images.max' => 'Máximo de :max imagens por produto.',
             'images.*.image' => 'Cada arquivo deve ser uma imagem válida.',
             'images.*.max' => 'Cada imagem pode ter no máximo 5MB.',
-            'image_url.url' => 'A URL da imagem principal é inválida.',
             'category_id.exists' => 'A categoria selecionada é inválida.',
             'price_cents.required' => 'Informe o preço do produto.',
             'price_cents.integer' => 'O preço do produto é inválido.',
@@ -91,21 +89,15 @@ class ProductController extends Controller
 
         $product = Product::query()->create($validated);
 
-        if (count($images) > 0) {
+        if (count($images) > 0 && Product::productImagesTableExists()) {
             $urls = $this->storeProductImages($request, $images);
-            $firstUrl = $urls[0] ?? null;
-            if (is_string($firstUrl) && $firstUrl !== '') {
-                $product->update(['image_url' => $firstUrl]);
-            }
 
-            if (Product::productImagesTableExists()) {
-                foreach ($urls as $i => $url) {
-                    ProductImage::query()->create([
-                        'product_id' => $product->id,
-                        'image_url' => $url,
-                        'sort_order' => $i,
-                    ]);
-                }
+            foreach ($urls as $i => $url) {
+                ProductImage::query()->create([
+                    'product_id' => $product->id,
+                    'image_url' => $url,
+                    'sort_order' => $i,
+                ]);
             }
         }
 
@@ -152,7 +144,6 @@ class ProductController extends Controller
             'remove_images' => ['nullable', 'array'],
             'remove_images.*' => ['integer'],
             'primary_image_id' => ['nullable', 'integer'],
-            'image_url' => ['nullable', 'url', 'max:2048'],
             'category_id' => ['nullable', 'exists:categories,id'],
             'is_featured' => ['nullable', 'boolean'],
             'size' => ['nullable', 'string', 'max:20'],
@@ -175,7 +166,6 @@ class ProductController extends Controller
             'remove_images.array' => 'Imagens para remover são inválidas.',
             'remove_images.*.integer' => 'Imagem para remover inválida.',
             'primary_image_id.integer' => 'Imagem principal inválida.',
-            'image_url.url' => 'A URL da imagem principal é inválida.',
             'category_id.exists' => 'A categoria selecionada é inválida.',
             'price_cents.required' => 'Informe o preço do produto.',
             'price_cents.integer' => 'O preço do produto é inválido.',
@@ -274,30 +264,16 @@ class ProductController extends Controller
                 }
             }
         } else {
+            // Fallback para quando product_images não existe (não deveria acontecer mais)
             $uploaded = [];
             if (count($replace) > 0) {
                 $uploaded = array_values($replace);
             } elseif (count($add) > 0) {
                 $uploaded = $add;
             }
-
-            if (count($uploaded) > 0) {
-                $urls = $this->storeProductImages($request, [$uploaded[0]]);
-                $firstUrl = $urls[0] ?? null;
-                if (is_string($firstUrl) && $firstUrl !== '') {
-                    $validated['image_url'] = $firstUrl;
-                }
-            }
         }
 
         $product->update($validated);
-
-        if (Product::productImagesTableExists()) {
-            $first = $product->images()->orderBy('sort_order')->orderBy('id')->value('image_url');
-            if (is_string($first) && $first !== '' && $product->image_url !== $first) {
-                $product->update(['image_url' => $first]);
-            }
-        }
 
         $tenant = app()->bound(Tenant::class) ? app(Tenant::class) : null;
 
@@ -365,7 +341,6 @@ class ProductController extends Controller
                 $this->deleteImageFromDisk($img->image_url);
             }
         }
-        $this->deleteImageFromDisk($product->image_url);
         $product->delete();
 
         $tenant = app()->bound(Tenant::class) ? app(Tenant::class) : null;

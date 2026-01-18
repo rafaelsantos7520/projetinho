@@ -41,11 +41,10 @@
                 </div>
             </a>
 
-            {{-- Busca Desktop --}}
-            <form action="{{ route('storefront.index', ['tenant' => $tenantSlug]) }}" method="GET" class="hidden md:flex flex-1 max-w-lg relative group">
-                <input type="hidden" name="tenant" value="{{ $tenantSlug }}">
+            {{-- Busca Desktop - Redireciona para página de produtos --}}
+            <form action="{{ route('storefront.products', ['tenant' => $tenantSlug]) }}" method="GET" class="hidden md:flex flex-1 max-w-lg relative group">
                 <div class="relative w-full">
-                    <input name="q" value="{{ $filters['q'] ?? '' }}" placeholder="Buscar produtos..."
+                    <input name="q" placeholder="Buscar produtos..."
                         class="w-full bg-slate-100/50 border border-slate-200 focus:bg-white focus:border-slate-300 rounded-full py-2.5 pl-12 pr-4 text-sm transition-all outline-none ring-0 placeholder:text-slate-400 group-hover:bg-white shadow-sm group-hover:shadow-md">
                     <svg class="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 group-hover:text-primary transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
                 </div>
@@ -60,11 +59,14 @@
 
             {{-- Ações Desktop --}}
             <div class="hidden md:flex items-center gap-4">
+                <a href="{{ route('storefront.products', ['tenant' => $tenantSlug]) }}" class="text-sm font-medium text-slate-600 hover:text-primary transition-colors">
+                    Ver Produtos
+                </a>
+                <span class="h-4 w-px bg-slate-200"></span>
                 <a href="#" class="flex items-center gap-2 text-sm font-medium text-slate-600 hover:text-primary transition-colors">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
                     <span>Entrar</span>
                 </a>
-                <span class="h-4 w-px bg-slate-200"></span>
                 <a href="#" class="group relative p-2" aria-label="Carrinho">
                     <span class="absolute -top-1 -right-1 h-5 w-5 bg-primary text-white text-[10px] font-bold flex items-center justify-center rounded-full ring-2 ring-white shadow-sm group-hover:scale-110 transition-transform">0</span>
                     <svg class="w-6 h-6 text-slate-600 group-hover:text-primary transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path></svg>
@@ -72,10 +74,9 @@
             </div>
         </div>
 
-        {{-- Mobile Search Overlay --}}
+        {{-- Mobile Search Overlay - Redireciona para página de produtos --}}
         <div x-show="searchOpen" x-transition class="md:hidden absolute top-full left-0 w-full bg-white border-b border-slate-100 p-4 shadow-lg z-0">
-             <form action="{{ route('storefront.index', ['tenant' => $tenantSlug]) }}" method="GET" class="relative">
-                <input type="hidden" name="tenant" value="{{ $tenantSlug }}">
+             <form action="{{ route('storefront.products', ['tenant' => $tenantSlug]) }}" method="GET" class="relative">
                 <input name="q" placeholder="O que você procura?" class="w-full bg-slate-50 border border-slate-200 rounded-lg py-3 pl-10 pr-4 text-sm focus:outline-none focus:border-slate-300">
                 <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
             </form>
@@ -140,10 +141,10 @@
                         Explore nossa seleção exclusiva de produtos que combinam qualidade premium e design inconfundível.
                     </p>
                     <div class="pt-4 flex flex-col sm:flex-row gap-4 justify-center">
-                        <a href="#produtos" class="px-8 py-4 bg-primary text-white font-bold rounded-full hover:bg-primary transition-all shadow-[0_10px_50px_rgba(0,0,0,0.35)] hover:shadow-[0_16px_60px_rgba(0,0,0,0.45)] hover:-translate-y-1 active:scale-[0.98]">
+                        <a href="{{ route('storefront.products', ['tenant' => $tenantSlug]) }}" class="px-8 py-4 bg-primary text-white font-bold rounded-full hover:bg-primary transition-all shadow-[0_10px_50px_rgba(0,0,0,0.35)] hover:shadow-[0_16px_60px_rgba(0,0,0,0.45)] hover:-translate-y-1 active:scale-[0.98]">
                             Ver Produtos
                         </a>
-                        <a href="#" class="px-8 py-4 bg-white/10 border border-white/30 text-white font-bold rounded-full hover:bg-white/20 transition-all hover:-translate-y-1 active:scale-[0.98] backdrop-blur-sm">
+                        <a href="#sobre" class="px-8 py-4 bg-white/10 border border-white/30 text-white font-bold rounded-full hover:bg-white/20 transition-all hover:-translate-y-1 active:scale-[0.98] backdrop-blur-sm">
                             Sobre a Marca
                         </a>
                     </div>
@@ -188,8 +189,8 @@
             </div>
         </section>
 
-        {{-- About / Bio Section (Always Shown) --}}
-        <section class="py-16 md:py-20">
+        {{-- About / Bio Section --}}
+        <section id="sobre" class="py-16 md:py-20">
             <div class="max-w-5xl mx-auto px-4">
                 <div class="bg-white rounded-3xl border border-slate-200 shadow-xl shadow-slate-900/5 p-8 md:p-12 text-center space-y-8">
                  <div class="inline-flex items-center justify-center p-3 bg-slate-50 rounded-2xl shadow-sm mb-2 transform rotate-2 hover:rotate-0 transition-transform duration-300">
@@ -215,12 +216,13 @@
             </div>
         </section>
 
-        {{-- Categories --}}
+        {{-- Categories Section --}}
+        @if($categories->count() > 0)
         <section class="py-14 md:py-16">
             <div class="max-w-7xl mx-auto px-4">
                 <div class="flex items-center justify-between mb-10">
                     <h2 class="text-2xl font-bold text-slate-900 border-l-4 border-primary pl-4">Nossas Categorias</h2>
-                    <a href="#" class="text-sm font-bold text-primary hover:text-slate-900 transition-colors flex items-center gap-1">
+                    <a href="{{ route('storefront.products', ['tenant' => $tenantSlug]) }}" class="text-sm font-bold text-primary hover:text-slate-900 transition-colors flex items-center gap-1">
                         Ver todas
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"/></svg>
                     </a>
@@ -228,7 +230,7 @@
                 
                 <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-6">
                     @foreach ($categories->take(6) as $cat)
-                        <a href="{{ route('storefront.index', ['tenant' => $tenantSlug, 'category' => $cat->name]) }}"
+                        <a href="{{ route('storefront.products', ['tenant' => $tenantSlug, 'category' => $cat->slug ?? $cat->name]) }}"
                             class="group flex flex-col items-center gap-3 text-center">
                             <div class="w-full max-w-[9.5rem]">
                                 <div class="relative overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm group-hover:shadow-xl transition-all duration-300 group-hover:-translate-y-1">
@@ -251,53 +253,82 @@
                 </div>
             </div>
         </section>
+        @endif
 
-        {{-- Products --}}
-        <section id="produtos" class="py-16 md:py-20">
+        {{-- Featured Products --}}
+        @if($featured->count() > 0)
+        <section class="py-16 md:py-20 bg-slate-50">
             <div class="max-w-7xl mx-auto px-4">
-                <div class="text-center max-w-2xl mx-auto mb-16">
-                    <h2 class="text-3xl md:text-4xl font-bold text-slate-900 mb-4">Lançamentos da Semana</h2>
+                <div class="flex items-center justify-between mb-10">
+                    <div>
+                        <span class="text-sm font-bold text-primary uppercase tracking-widest">Destaques</span>
+                        <h2 class="text-2xl md:text-3xl font-bold text-slate-900 mt-2">Produtos em Destaque</h2>
+                    </div>
+                    <a href="{{ route('storefront.products', ['tenant' => $tenantSlug]) }}" class="hidden sm:flex items-center gap-2 px-5 py-2.5 bg-white border border-slate-200 rounded-full text-sm font-bold text-slate-700 hover:border-primary hover:text-primary transition-colors shadow-sm">
+                        Ver Todos
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"/></svg>
+                    </a>
+                </div>
+                
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-y-10 gap-x-6">
+                    @foreach ($featured as $product)
+                        @include('storefront.partials.product-card', ['product' => $product])
+                    @endforeach
+                </div>
+            </div>
+        </section>
+        @endif
+
+        {{-- Promos Section --}}
+        @if($promos->count() > 0)
+        <section class="py-16 md:py-20">
+            <div class="max-w-7xl mx-auto px-4">
+                <div class="text-center max-w-2xl mx-auto mb-12">
+                    <span class="inline-flex items-center gap-2 px-4 py-1.5 bg-red-100 text-red-600 rounded-full text-sm font-bold mb-4">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 18.657A8 8 0 016.343 7.343S7 9 9 10c0-2 .5-5 2.986-7C14 5 16.09 5.777 17.656 7.343A7.975 7.975 0 0120 13a7.975 7.975 0 01-2.343 5.657z"/></svg>
+                        Ofertas Imperdíveis
+                    </span>
+                    <h2 class="text-3xl md:text-4xl font-bold text-slate-900 mb-4">Promoções Especiais</h2>
+                    <p class="text-slate-500">Aproveite descontos exclusivos em produtos selecionados. Oferta por tempo limitado!</p>
+                </div>
+                
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                    @foreach ($promos as $product)
+                        @include('storefront.partials.product-card', ['product' => $product])
+                    @endforeach
+                </div>
+            </div>
+        </section>
+        @endif
+
+        {{-- Newest Products --}}
+        @if($newest->count() > 0)
+        <section class="py-16 md:py-20 bg-slate-50">
+            <div class="max-w-7xl mx-auto px-4">
+                <div class="text-center max-w-2xl mx-auto mb-12">
+                    <span class="inline-flex items-center gap-2 px-4 py-1.5 bg-primary/10 text-primary rounded-full text-sm font-bold mb-4">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/></svg>
+                        Novidades
+                    </span>
+                    <h2 class="text-3xl md:text-4xl font-bold text-slate-900 mb-4">Chegou Agora</h2>
                     <p class="text-slate-500">Fique por dentro das últimas tendências e novidades que acabaram de chegar.</p>
                 </div>
                 
-                {{-- Filter Tabs --}}
-                <div class="flex justify-center mb-10 flex-wrap gap-2">
-                     <a href="{{ route('storefront.index', ['tenant' => $tenantSlug]) }}" 
-                       class="px-5 py-2.5 rounded-full text-sm font-bold transition-all border {{ !request('category') ? 'bg-primary text-white shadow-lg border-primary' : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50 hover:border-slate-300' }}">
-                       Todos
-                    </a>
-                    @foreach($categories->take(5) as $cat)
-                         <a href="{{ route('storefront.index', ['tenant' => $tenantSlug, 'category' => $cat->name]) }}" 
-                           class="px-5 py-2.5 rounded-full text-sm font-bold transition-all border {{ request('category') == $cat->name ? 'bg-primary text-white shadow-lg border-primary' : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50 hover:border-slate-300' }}">
-                           {{ $cat->name }}
-                        </a>
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-y-10 gap-x-6">
+                    @foreach ($newest as $product)
+                        @include('storefront.partials.product-card', ['product' => $product])
                     @endforeach
                 </div>
-
-                @if ($products->isEmpty())
-                    <div class="bg-white rounded-3xl p-16 text-center border border-dashed border-slate-200">
-                         <div class="mx-auto h-20 w-20 bg-slate-50 text-slate-300 rounded-full flex items-center justify-center mb-6">
-                            <svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
-                        </div>
-                        <h3 class="text-xl font-bold text-slate-900 mb-2">Ops, nenhum produto aqui!</h3>
-                        <p class="text-slate-500">Tente mudar os filtros ou volte mais tarde.</p>
-                    <a href="{{ route('storefront.index', ['tenant' => $tenantSlug]) }}" class="mt-6 inline-block px-6 py-2 bg-primary text-white rounded-lg hover:bg-primary transition-colors">Limpar Filtros</a>
-                    </div>
-                @else
-                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-y-10 gap-x-6">
-                        @foreach ($products as $product)
-                            @include('storefront.partials.product-card', ['product' => $product])
-                        @endforeach
-                    </div>
-                    
-                    <div class="mt-16 text-center">
-                        <button class="px-8 py-3 bg-white border border-slate-200 text-slate-900 font-bold rounded-full hover:bg-slate-50 transition-all shadow-sm hover:shadow-md active:scale-[0.98]">
-                            Carregar Mais Produtos
-                        </button>
-                    </div>
-                @endif
+                
+                <div class="mt-12 text-center">
+                    <a href="{{ route('storefront.products', ['tenant' => $tenantSlug]) }}" class="inline-flex items-center gap-2 px-8 py-4 bg-primary text-white font-bold rounded-full hover:bg-primary/90 transition-all shadow-lg hover:shadow-xl hover:-translate-y-0.5 active:scale-[0.98]">
+                        Ver Todos os Produtos
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"/></svg>
+                    </a>
+                </div>
             </div>
         </section>
+        @endif
 
         {{-- Newsletter --}}
         <section class="py-20 md:py-24 bg-primary-strong text-white relative overflow-hidden">
