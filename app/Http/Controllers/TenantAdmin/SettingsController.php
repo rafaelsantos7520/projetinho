@@ -99,12 +99,16 @@ class SettingsController extends Controller
         $tenant = app()->bound(Tenant::class) ? app(Tenant::class) : null;
         $tenantSlug = $tenant?->slug ?? 'default';
 
-        $filePath = $request->file($inputName)->storePublicly(
+        $diskName = config('filesystems.product_images_disk', 'public');
+        $disk = Storage::disk($diskName);
+
+        $filePath = $disk->putFile(
             'tenants/'.$tenantSlug.'/'.$folder,
+            $request->file($inputName),
             'public'
         );
 
-        return Storage::disk('public')->url($filePath);
+        return $disk->url($filePath);
     }
 
     private function deleteLocalImageIfApplicable(?string $imageUrl): void
@@ -118,16 +122,25 @@ class SettingsController extends Controller
             return;
         }
 
-        $prefix = '/storage/';
-        if (! str_starts_with($path, $prefix)) {
-            return;
+        // Se for url local antiga (/storage/...), removemos o prefixo
+        if (str_starts_with($path, '/storage/')) {
+            $relative = ltrim(substr($path, 9), '/'); // 9 = strlen('/storage/')
+        } else {
+            // Para R2/S3, o path geralmente já é o relativo (com / inicial)
+            // Se o path incluir o bucket ou domínio, a lógica de parse_url já pegou o path
+            $relative = ltrim($path, '/');
         }
 
-        $relative = ltrim(substr($path, strlen($prefix)), '/');
         if ($relative === '') {
             return;
         }
 
-        Storage::disk('public')->delete($relative);
+        $diskName = config('filesystems.product_images_disk', 'public');
+
+        try {
+            Storage::disk($diskName)->delete($relative);
+        } catch (\Throwable $e) {
+            // Logar erro ou ignorar se arquivo já não existe
+        }
     }
 }

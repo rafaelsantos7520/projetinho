@@ -73,9 +73,10 @@
 
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-20">
                 {{-- Galeria de Imagens --}}
-                <div class="space-y-4">
+                {{-- Galeria de Imagens --}}
+                <div class="space-y-4" x-data="{ activeImage: '{{ $product->primary_image_url ?? asset('images/product-placeholder.png') }}' }">
                     <div class="aspect-square bg-slate-100 rounded-3xl overflow-hidden relative group">
-                        <img src="{{ $product->primary_image_url ?? asset('images/product-placeholder.png') }}"
+                        <img :src="activeImage"
                             alt="{{ $product->name }}"
                             onerror="this.onerror=null;this.src='{{ asset('images/product-placeholder.png') }}'"
                             class="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-500">
@@ -86,29 +87,23 @@
                             </span>
                         @endif
                     </div>
-                    <div class="grid grid-cols-4 gap-4">
-                        @if ($gallery->isEmpty())
-                            @for ($i = 0; $i < 4; $i++)
-                                <div
-                                    class="aspect-square bg-slate-50 rounded-xl overflow-hidden cursor-pointer border-2 {{ $i === 0 ? 'border-primary' : 'border-transparent hover:border-slate-200' }}">
-                                    <img src="{{ $product->primary_image_url ?? asset('images/product-placeholder.png') }}"
-                                        onerror="this.onerror=null;this.src='{{ asset('images/product-placeholder.png') }}'"
-                                        class="w-full h-full object-cover">
-                                </div>
-                            @endfor
-                        @else
+                    
+                    @if($gallery->isNotEmpty() && $gallery->count() > 1)
+                        <div class="grid grid-cols-4 gap-4">
                             @foreach ($gallery as $img)
-                                <div class="aspect-square bg-slate-50 rounded-xl overflow-hidden border-2 border-transparent hover:border-slate-200">
+                                <button @click="activeImage = '{{ $img->image_url }}'" 
+                                    class="aspect-square bg-slate-50 rounded-xl overflow-hidden border-2 transition-all hover:scale-95"
+                                    :class="activeImage === '{{ $img->image_url }}' ? 'border-primary ring-2 ring-primary/20' : 'border-transparent hover:border-slate-300'">
                                     <img src="{{ $img->image_url }}" class="w-full h-full object-cover">
-                                </div>
+                                </button>
                             @endforeach
-                        @endif
-                    </div>
+                        </div>
+                    @endif
                 </div>
 
                 {{-- Detalhes do Produto --}}
                 <div class="flex flex-col">
-                    <h1 class="text-3xl md:text-4xl font-bold text-slate-900 mb-2">{{ $product->name }}</h1>
+                    <h1 class="text-2xl sm:text-3xl lg:text-4xl font-bold text-slate-900 mb-2">{{ $product->name }}</h1>
 
                     <div class="flex items-center gap-4 mb-6">
                         <div class="flex items-center text-amber-400">
@@ -158,11 +153,12 @@
                                 </a>
                             @else
                                 <button
-                                    class="w-full bg-primary hover:bg-primary text-white text-lg font-bold py-4 rounded-full shadow-lg transition-all active:scale-[0.98]"
+                                    class="w-full text-white text-lg font-bold py-4 rounded-full shadow-lg transition-all active:scale-[0.98] hover:brightness-110"
+                                    style="background-color: var(--primary-color)">
                                     Adicionar ao Carrinho
                                 </button>
                                 <button
-                                    class="w-full bg-white border border-primary text-primary hover:bg-primary hover:text-white font-bold py-4 rounded-full transition-colors">
+                                    class="w-full bg-white border border-primary text-primary hover:bg-primary/5 font-bold py-4 rounded-full transition-colors">
                                     Comprar Agora
                                 </button>
                             @endif

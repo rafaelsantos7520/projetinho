@@ -124,8 +124,8 @@
                                     <div class="flex items-center gap-3">
                                         <div
                                             class="h-10 w-10 rounded-lg bg-slate-100 overflow-hidden border border-slate-200">
-                                            @if ($product->image_url)
-                                                <img src="{{ $product->image_url }}"
+                                            @if ($product->primary_image_url)
+                                                <img src="{{ $product->primary_image_url }}"
                                                     class="h-full w-full object-cover" />
                                             @else
                                                 <div
