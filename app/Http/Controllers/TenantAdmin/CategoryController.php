@@ -127,7 +127,10 @@ class CategoryController extends Controller
         $filePath = $disk->putFile(
             'tenants/'.$tenantSlug.'/categories',
             $request->file('image'),
-            'public'
+            [
+                'visibility' => 'public',
+                'CacheControl' => 'public, max-age=31536000',
+            ]
         );
 
         return $disk->url($filePath);

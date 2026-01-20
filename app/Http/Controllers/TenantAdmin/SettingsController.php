@@ -31,16 +31,16 @@ class SettingsController extends Controller
     public function update(Request $request): RedirectResponse
     {
         $validated = $request->validate([
-            'logo' => ['nullable', 'image', 'max:5120'],
+            'logo' => ['nullable', 'image', 'max:15360'],
             'remove_logo' => ['nullable', 'boolean'],
             'primary_color' => ['required', 'string', 'regex:/^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/'],
             'whatsapp_number' => ['nullable', 'string', 'max:20'],
             'instagram_url' => ['nullable', 'url', 'max:255'],
             'facebook_url' => ['nullable', 'url', 'max:255'],
             'biography' => ['nullable', 'string', 'max:1000'],
-            'banner_1' => ['nullable', 'image', 'max:5120'],
-            'banner_2' => ['nullable', 'image', 'max:5120'],
-            'banner_3' => ['nullable', 'image', 'max:5120'],
+            'banner_1' => ['nullable', 'image', 'max:15360'],
+            'banner_2' => ['nullable', 'image', 'max:15360'],
+            'banner_3' => ['nullable', 'image', 'max:15360'],
             'remove_banner_1' => ['nullable', 'boolean'],
             'remove_banner_2' => ['nullable', 'boolean'],
             'remove_banner_3' => ['nullable', 'boolean'],
@@ -105,7 +105,10 @@ class SettingsController extends Controller
         $filePath = $disk->putFile(
             'tenants/'.$tenantSlug.'/'.$folder,
             $request->file($inputName),
-            'public'
+            [
+                'visibility' => 'public',
+                'CacheControl' => 'public, max-age=31536000',
+            ]
         );
 
         return $disk->url($filePath);

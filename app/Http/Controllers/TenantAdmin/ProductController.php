@@ -361,7 +361,10 @@ class ProductController extends Controller
             $filePath = $disk->putFile(
                 'tenants/'.$tenantSlug.'/products',
                 $file,
-                'public'
+                [
+                    'visibility' => 'public',
+                    'CacheControl' => 'public, max-age=31536000',
+                ]
             );
 
             $urls[] = $disk->url($filePath);
